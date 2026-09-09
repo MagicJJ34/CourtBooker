@@ -1,0 +1,31 @@
+﻿@model IEnumerable<CourtBooker.Models.Court>
+
+@{
+    ViewData["Title"] = "Lista Kortów";
+}
+
+<h2>Lista Kortów Tenisowych</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Dodaj nowy kort</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nazwa</th>
+            <th>Nawierzchnia</th>
+            <th>Cena za godzinę</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Surface</td>
+                <td>@item.PricePerHour.ToString("C")</td>
+            </tr>
+        }
+    </tbody>
+</table>
