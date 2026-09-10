@@ -1,0 +1,32 @@
+﻿@model IEnumerable<CourtBooker.Models.Reservation>
+
+@{
+    ViewData["Title"] = "Rezerwacje";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Wszystkie Rezerwacje</h2>
+    <a asp-action="Create" class="btn btn-success">Zarezerwuj kort</a>
+</div>
+
+<table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Kort</th>
+            <th>Użytkownik</th>
+            <th>Początek</th>
+            <th>Koniec</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Court?.Name</td>
+                <td>@item.User?.Email</td>
+                <td>@item.StartTime.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>@item.EndTime.ToString("dd.MM.yyyy HH:mm")</td>
+            </tr>
+        }
+    </tbody>
+</table>

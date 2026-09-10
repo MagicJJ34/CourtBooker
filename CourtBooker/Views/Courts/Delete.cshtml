@@ -1,0 +1,24 @@
+﻿@model CourtBooker.Models.Court
+
+@{
+    ViewData["Title"] = "Usuń Kort";
+}
+
+<h2 class="text-danger">Usuwanie Kortu</h2>
+<p>Czy na pewno chcesz usunąć ten kort?</p>
+
+<div class="card mb-3" style="max-width: 400px;">
+    <div class="card-body">
+        <h5 class="card-title">@Model.Name</h5>
+        <p class="card-text">
+            <strong>Nawierzchnia:</strong> @Model.Surface <br />
+            <strong>Cena:</strong> @Model.PricePerHour.ToString("C") / h
+        </p>
+    </div>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Tak, usuń</button>
+    <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+</form>

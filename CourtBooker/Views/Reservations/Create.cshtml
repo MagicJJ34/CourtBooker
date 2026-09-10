@@ -1,0 +1,36 @@
+﻿@model CourtBooker.Models.Reservation
+
+@{
+    ViewData["Title"] = "Nowa Rezerwacja";
+}
+
+<h2>Nowa Rezerwacja</h2>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="form-group mb-3">
+        <label class="control-label">Wybierz Kort</label>
+        <select asp-for="CourtId" class="form-select" asp-items="ViewBag.CourtId"></select>
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="control-label">Wybierz Użytkownika</label>
+        <select asp-for="UserId" class="form-select" asp-items="ViewBag.UserId"></select>
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="control-label">Początek rezerwacji</label>
+        <input asp-for="StartTime" class="form-control" type="time" />
+        <span asp-validation-for="StartTime" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="control-label">Koniec rezerwacji</label>
+        <input asp-for="EndTime" class="form-control" type="time" />
+        <span asp-validation-for="EndTime" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Zarezerwuj</button>
+    <a asp-action="Index" class="btn btn-secondary">Powrót</a>
+</form>
