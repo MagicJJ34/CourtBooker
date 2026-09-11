@@ -14,8 +14,10 @@
         <tr>
             <th>Kort</th>
             <th>Użytkownik</th>
-            <th>Początek</th>
-            <th>Koniec</th>
+            <th>Data</th>
+            <th>Godziny</th>
+            <th>Koszt</th>
+            <th>Status</th>
         </tr>
     </thead>
     <tbody>
@@ -24,8 +26,10 @@
             <tr>
                 <td>@item.Court?.Name</td>
                 <td>@item.User?.Email</td>
-                <td>@item.StartTime.ToString("dd.MM.yyyy HH:mm")</td>
-                <td>@item.EndTime.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>@item.Date.ToString("dd.MM.yyyy")</td>
+                <td>@item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")</td>
+                <td>@item.TotalPrice.ToString("C")</td>
+                <td><span class="badge bg-warning text-dark">@item.Status</span></td>
             </tr>
         }
     </tbody>

@@ -14,4 +14,12 @@ public class Reservation
     public TimeOnly StartTime { get; set; }
     public TimeOnly EndTime { get; set; }
     public string Status { get; set; } = "Pending";
+
+    public decimal TotalPrice { get; set; }
+
+    public decimal CalculatePrice(decimal pricePerHour)
+    {
+        var duration = EndTime - StartTime;
+        return (decimal)duration.TotalHours * pricePerHour;
+    }
 }

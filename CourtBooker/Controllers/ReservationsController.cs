@@ -20,7 +20,8 @@ public class ReservationsController : Controller
         var reservations = await _context.Reservations
             .Include(r => r.Court)
             .Include(r => r.User)
-            .OrderByDescending(r => r.StartTime)
+            .OrderByDescending(r => r.Date)
+            .ThenBy(r => r.StartTime)
             .ToListAsync();
 
         return View(reservations);
@@ -35,10 +36,15 @@ public class ReservationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("CourtId,UserId,StartTime,EndTime")] Reservation reservation)
+    public async Task<IActionResult> Create([Bind("CourtId,UserId,Date,StartTime,EndTime")] Reservation reservation)
     {
         ModelState.Remove("Court");
         ModelState.Remove("User");
+
+        if (reservation.Date < DateOnly.FromDateTime(DateTime.Now))
+        {
+            ModelState.AddModelError("Date", "Nie można rezerwować terminów z przeszłości.");
+        }
 
         if (reservation.StartTime >= reservation.EndTime)
         {
@@ -47,17 +53,24 @@ public class ReservationsController : Controller
 
         bool isOccupied = await _context.Reservations.AnyAsync(r =>
             r.CourtId == reservation.CourtId &&
+            r.Date == reservation.Date &&
             reservation.StartTime < r.EndTime &&
             reservation.EndTime > r.StartTime
         );
 
         if (isOccupied)
         {
-            ModelState.AddModelError("", "Kort jest już zarezerwowany w wybranym przedziale czasowym!");
+            ModelState.AddModelError("", "Kort jest już zarezerwowany w wybranym dniu i godzinach!");
         }
 
         if (ModelState.IsValid)
         {
+            var court = await _context.Courts.FindAsync(reservation.CourtId);
+            if (court != null)
+            {
+                reservation.TotalPrice = reservation.CalculatePrice(court.PricePerHour);
+            }
+
             _context.Add(reservation);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));

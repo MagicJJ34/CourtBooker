@@ -1,0 +1,32 @@
+﻿@model CourtBooker.Models.User
+
+@{
+    ViewData["Title"] = "Dodaj Użytkownika";
+}
+
+<h2>Dodaj Nowego Użytkownika</h2>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="form-group mb-3">
+        <label class="control-label">Imię i Nazwisko</label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="control-label">Adres Email</label>
+        <input asp-for="Email" class="form-control" type="email" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="control-label">Hasło</label>
+        <input asp-for="PasswordHash" class="form-control" type="password" />
+        <span asp-validation-for="PasswordHash" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Dodaj Użytkownika</button>
+    <a asp-action="Index" class="btn btn-secondary">Powrót</a>
+</form>

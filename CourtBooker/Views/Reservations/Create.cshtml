@@ -20,6 +20,12 @@
     </div>
 
     <div class="form-group mb-3">
+        <label class="control-label">Data rezerwacji</label>
+        <input asp-for="Date" class="form-control" type="date" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
         <label class="control-label">Początek rezerwacji</label>
         <input asp-for="StartTime" class="form-control" type="time" />
         <span asp-validation-for="StartTime" class="text-danger"></span>

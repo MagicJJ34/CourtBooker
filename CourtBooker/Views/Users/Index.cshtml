@@ -1,0 +1,30 @@
+﻿@model IEnumerable<CourtBooker.Models.User>
+
+@{
+    ViewData["Title"] = "Użytkownicy";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Lista Użytkowników</h2>
+    <a asp-action="Create" class="btn btn-success">Dodaj Użytkownika</a>
+</div>
+
+<table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Imię i Nazwisko</th>
+            <th>Email</th>
+            <th>Rola</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Email</td>
+                <td><span class="badge bg-secondary">@item.Role</span></td>
+            </tr>
+        }
+    </tbody>
+</table>
