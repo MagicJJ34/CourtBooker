@@ -15,6 +15,7 @@
             <th>Imię i Nazwisko</th>
             <th>Email</th>
             <th>Rola</th>
+            <th class="text-end">Akcje (Admin)</th>
         </tr>
     </thead>
     <tbody>
@@ -24,6 +25,10 @@
                 <td>@item.Name</td>
                 <td>@item.Email</td>
                 <td><span class="badge bg-secondary">@item.Role</span></td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Edytuj</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Usuń</a>
+                </td>
             </tr>
         }
     </tbody>

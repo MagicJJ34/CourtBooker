@@ -1,7 +1,7 @@
 ﻿@model CourtBooker.Models.Reservation
 
 @{
-    ViewData["Title"] = "Nowa Rezerwacja";
+    ViewData["Title"] = "Edycja Rezerwacji";
 
     var timeSlots = new List<SelectListItem>();
     for (int hour = 6; hour <= 22; hour++)
@@ -17,24 +17,25 @@
     }
 }
 
-<h2>Nowa Rezerwacja</h2>
+<h2>Edycja Rezerwacji (Admin)</h2>
 
-<form asp-action="Create" method="post">
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
     <div class="form-group mb-3">
-        <label class="control-label">Wybierz Kort</label>
+        <label class="control-label">Kort</label>
         <select asp-for="CourtId" class="form-select" asp-items="ViewBag.CourtId"></select>
     </div>
 
     <div class="form-group mb-3">
-        <label class="control-label">Wybierz Użytkownika</label>
+        <label class="control-label">Użytkownik</label>
         <select asp-for="UserId" class="form-select" asp-items="ViewBag.UserId"></select>
     </div>
 
     <div class="form-group mb-3">
         <label class="control-label">Data rezerwacji</label>
-        <input asp-for="Date" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+        <input asp-for="Date" class="form-control" type="date" />
         <span asp-validation-for="Date" class="text-danger"></span>
     </div>
 
@@ -50,6 +51,15 @@
         <span asp-validation-for="EndTime" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Zarezerwuj</button>
-    <a asp-action="Index" class="btn btn-secondary">Powrót</a>
+    <div class="form-group mb-3">
+        <label class="control-label">Status</label>
+        <select asp-for="Status" class="form-select">
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Zapisz Zmiany</button>
+    <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
 </form>

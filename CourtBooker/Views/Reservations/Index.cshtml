@@ -18,6 +18,7 @@
             <th>Godziny</th>
             <th>Koszt</th>
             <th>Status</th>
+            <th class="text-end">Akcje</th>
         </tr>
     </thead>
     <tbody>
@@ -29,7 +30,37 @@
                 <td>@item.Date.ToString("dd.MM.yyyy")</td>
                 <td>@item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")</td>
                 <td>@item.TotalPrice.ToString("C")</td>
-                <td><span class="badge bg-warning text-dark">@item.Status</span></td>
+                <td>
+                    @if (item.Status == "Cancelled")
+                    {
+                        <span class="badge bg-danger">Anulowano</span>
+                    }
+                    else if (item.Status == "Completed")
+                    {
+                        <span class="badge bg-secondary">Zakończona</span>
+                    }
+                    else if (item.Status == "In Progress")
+                    {
+                        <span class="badge bg-primary">W trakcie</span>
+                    }
+                    else if (item.Status == "Confirmed")
+                    {
+                        <span class="badge bg-success">Potwierdzono</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">@item.Status</span>
+                    }
+                </td>
+                <td class="text-end">
+                    @if (item.Status != "Cancelled" && item.Status != "Completed")
+                    {
+                        <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Czy na pewno chcesz anulować tę rezerwację?')">Anuluj</button>
+                        </form>
+                    }
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Edytuj (Admin)</a>
+                </td>
             </tr>
         }
     </tbody>

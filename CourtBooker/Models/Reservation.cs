@@ -1,4 +1,6 @@
-﻿namespace CourtBooker.Models;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace CourtBooker.Models;
 
 public class Reservation
 {
@@ -13,7 +15,38 @@ public class Reservation
     public DateOnly Date { get; set; }
     public TimeOnly StartTime { get; set; }
     public TimeOnly EndTime { get; set; }
-    public string Status { get; set; } = "Pending";
+
+    [Column("Status")]
+    public string InternalStatus { get; set; } = "Pending";
+
+    [NotMapped]
+    public string Status
+    {
+        get
+        {
+            if (InternalStatus == "Cancelled") return "Cancelled";
+
+            var now = DateTime.Now;
+            var startDateTime = Date.ToDateTime(StartTime);
+            var endDateTime = Date.ToDateTime(EndTime);
+
+            if (now >= endDateTime)
+            {
+                return "Completed";
+            }
+
+            if (now >= startDateTime && now < endDateTime)
+            {
+                return "In Progress";
+            }
+
+            return InternalStatus;
+        }
+        set
+        {
+            InternalStatus = value;
+        }
+    }
 
     public decimal TotalPrice { get; set; }
 

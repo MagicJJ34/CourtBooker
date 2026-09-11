@@ -54,6 +54,7 @@ public class ReservationsController : Controller
         bool isOccupied = await _context.Reservations.AnyAsync(r =>
             r.CourtId == reservation.CourtId &&
             r.Date == reservation.Date &&
+            r.InternalStatus != "Cancelled" &&
             reservation.StartTime < r.EndTime &&
             reservation.EndTime > r.StartTime
         );
@@ -72,6 +73,77 @@ public class ReservationsController : Controller
             }
 
             _context.Add(reservation);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        ViewBag.CourtId = new SelectList(await _context.Courts.ToListAsync(), "Id", "Name", reservation.CourtId);
+        ViewBag.UserId = new SelectList(await _context.Users.ToListAsync(), "Id", "Email", reservation.UserId);
+        return View(reservation);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var reservation = await _context.Reservations.FindAsync(id);
+        if (reservation == null) return NotFound();
+
+        reservation.Status = "Cancelled";
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null) return NotFound();
+
+        var reservation = await _context.Reservations.FindAsync(id);
+        if (reservation == null) return NotFound();
+
+        ViewBag.CourtId = new SelectList(await _context.Courts.ToListAsync(), "Id", "Name", reservation.CourtId);
+        ViewBag.UserId = new SelectList(await _context.Users.ToListAsync(), "Id", "Email", reservation.UserId);
+        return View(reservation);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, [Bind("Id,CourtId,UserId,Date,StartTime,EndTime,Status")] Reservation reservation)
+    {
+        if (id != reservation.Id) return NotFound();
+
+        ModelState.Remove("Court");
+        ModelState.Remove("User");
+
+        if (reservation.StartTime >= reservation.EndTime)
+        {
+            ModelState.AddModelError("EndTime", "Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia.");
+        }
+
+        bool isOccupied = await _context.Reservations.AnyAsync(r =>
+            r.Id != reservation.Id &&
+            r.CourtId == reservation.CourtId &&
+            r.Date == reservation.Date &&
+            r.InternalStatus != "Cancelled" &&
+            reservation.StartTime < r.EndTime &&
+            reservation.EndTime > r.StartTime
+        );
+
+        if (isOccupied)
+        {
+            ModelState.AddModelError("", "Kort jest już zarezerwowany w wybranym dniu i godzinach!");
+        }
+
+        if (ModelState.IsValid)
+        {
+            var court = await _context.Courts.FindAsync(reservation.CourtId);
+            if (court != null)
+            {
+                reservation.TotalPrice = reservation.CalculatePrice(court.PricePerHour);
+            }
+
+            _context.Update(reservation);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
