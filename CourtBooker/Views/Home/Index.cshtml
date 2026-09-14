@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Strona Główna";
+}
+
+<div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
+    <div class="container-fluid py-3">
+        <h1 class="display-5 fw-bold">Witaj w CourtBooker!</h1>
+        <p class="col-md-8 fs-4">System rezerwacji kortów tenisowych online. Wybierz dogodny termin i zarezerwuj swój kort w kilka sekund.</p>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="btn btn-primary btn-lg" asp-controller="Reservations" asp-action="Create">Zarezerwuj kort teraz</a>
+        }
+        else
+        {
+            <a class="btn btn-primary btn-lg me-2" asp-controller="Account" asp-action="Register">Zarejestruj się</a>
+            <a class="btn btn-outline-secondary btn-lg" asp-controller="Account" asp-action="Login">Zaloguj się</a>
+        }
+    </div>
+</div>
+
+<div class="row text-center mt-4">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Szybka Rezerwacja</h5>
+                <p class="card-text">Wybierz kort oraz godziny i zarezerwuj rozgrywkę w 30-minutowych slotach.</p>
+                <a asp-controller="Reservations" asp-action="Create" class="btn btn-outline-primary btn-sm">Zarezerwuj</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Moje Rezerwacje</h5>
+                <p class="card-text">Przeglądaj historię swoich rezerwacji oraz sprawdzaj ich aktualny status.</p>
+                <a asp-controller="Reservations" asp-action="Index" class="btn btn-outline-primary btn-sm">Zobacz historię</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Wsparcie i Kontakt</h5>
+                <p class="card-text">Masz pytania dotyczące rezerwacji lub obiektów? Skontaktuj się z obsługą.</p>
+            </div>
+        </div>
+    </div>
+</div>
