@@ -27,6 +27,11 @@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
+                                <a class="nav-link text-white-50 hover-white" asp-controller="Reservations" asp-action="Calendar">
+                                    <i class="bi bi-calendar3 me-1"></i> Kalendarz
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link text-white-50 hover-white" asp-controller="Reservations" asp-action="Index">Rezerwacje</a>
                             </li>
 

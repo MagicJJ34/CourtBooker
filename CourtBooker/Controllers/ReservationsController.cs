@@ -41,16 +41,39 @@ public class ReservationsController : Controller
         return View(reservations);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Calendar()
     {
         ViewBag.CourtId = new SelectList(await _context.Courts.ToListAsync(), "Id", "Name");
+        return View();
+    }
+
+    public async Task<IActionResult> Create(string? date, string? startTime, string? endTime, int? courtId)
+    {
+        ViewBag.CourtId = new SelectList(await _context.Courts.ToListAsync(), "Id", "Name", courtId);
 
         if (User.IsInRole("Admin"))
         {
             ViewBag.UserId = new SelectList(await _context.Users.ToListAsync(), "Id", "Email");
         }
 
-        return View();
+        var reservation = new Reservation();
+
+        if (!string.IsNullOrEmpty(date) && DateOnly.TryParse(date, out var parsedDate))
+        {
+            reservation.Date = parsedDate;
+        }
+
+        if (!string.IsNullOrEmpty(startTime) && TimeOnly.TryParse(startTime, out var parsedStartTime))
+        {
+            reservation.StartTime = parsedStartTime;
+        }
+
+        if (!string.IsNullOrEmpty(endTime) && TimeOnly.TryParse(endTime, out var parsedEndTime))
+        {
+            reservation.EndTime = parsedEndTime;
+        }
+
+        return View(reservation);
     }
 
     [HttpPost]
@@ -89,7 +112,7 @@ public class ReservationsController : Controller
 
         if (isOccupied)
         {
-            ModelState.AddModelError("", "Kort jest już zarezerwowany w wybranym dniu i godzinach!");
+            ModelState.AddModelError("", "Kort jest już zarezerworany w wybranym dniu i godzinach!");
         }
 
         if (ModelState.IsValid)
@@ -225,5 +248,41 @@ public class ReservationsController : Controller
         }
 
         return View(reservation);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetEvents(int? courtId)
+    {
+        IQueryable<Reservation> query = _context.Reservations
+            .Include(r => r.Court)
+            .Include(r => r.User)
+            .Where(r => r.InternalStatus != "Cancelled" && r.InternalStatus != "Anulowano");
+
+        if (courtId.HasValue && courtId.Value > 0)
+        {
+            query = query.Where(r => r.CourtId == courtId.Value);
+        }
+
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        int.TryParse(userIdClaim, out int currentUserId);
+        bool isAdmin = User.IsInRole("Admin");
+
+        if (!isAdmin)
+        {
+            query = query.Where(r => r.UserId == currentUserId);
+        }
+
+        var events = await query.ToListAsync();
+
+        var result = events.Select(r => new
+        {
+            id = r.Id,
+            title = $"{r.Court?.Name ?? "Kort"} - {r.User?.Name ?? r.User?.Email}",
+            start = $"{r.Date:yyyy-MM-dd}T{r.StartTime:HH\\:mm\\:ss}",
+            end = $"{r.Date:yyyy-MM-dd}T{r.EndTime:HH\\:mm\\:ss}",
+            color = "#198754"
+        });
+
+        return Json(result);
     }
 }

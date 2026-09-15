@@ -1,0 +1,95 @@
+﻿@{
+    ViewData["Title"] = "Kalendarz Rezerwacji";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold text-dark mb-0">
+        <i class="bi bi-calendar3 me-2 text-emerald"></i>Kalendarz Rezerwacji
+    </h1>
+    <a asp-action="Create" class="btn btn-emerald rounded-pill px-4 text-white fw-bold shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i>Nowa rezerwacja
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <label for="courtFilter" class="form-label fw-bold small text-muted">Filtruj według kortu:</label>
+                <select id="courtFilter" class="form-select" asp-items="ViewBag.CourtId">
+                    <option value="">-- Wszystkie korty --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-3">
+    <div id="calendar"></div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+            var courtFilter = document.getElementById('courtFilter');
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'pl',
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                buttonText: {
+                    today: 'Dzisiaj',
+                    month: 'Miesiąc',
+                    week: 'Tydzień',
+                    day: 'Dzień'
+                },
+                slotMinTime: '06:00:00',
+                slotMaxTime: '23:00:00',
+                allDaySlot: false,
+                selectable: true,
+                events: function (fetchInfo, successCallback, failureCallback) {
+                    var courtId = courtFilter.value;
+                    var url = '/Reservations/GetEvents';
+                    if (courtId) {
+                        url += '?courtId=' + courtId;
+                    }
+
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => successCallback(data))
+                        .catch(error => failureCallback(error));
+                },
+                select: function (info) {
+                    var dateStr = info.startStr.split('T')[0];
+                    var startTimeStr = info.startStr.split('T')[1].substring(0, 5);
+                    var endTimeStr = info.endStr.split('T')[1].substring(0, 5);
+                    var selectedCourt = courtFilter.value;
+
+                    var createUrl = '/Reservations/Create' +
+                        '?date=' + dateStr +
+                        '&startTime=' + startTimeStr +
+                        '&endTime=' + endTimeStr;
+
+                    if (selectedCourt) {
+                        createUrl += '&courtId=' + selectedCourt;
+                    }
+
+                    window.location.href = createUrl;
+                }
+            });
+
+            calendar.render();
+
+            courtFilter.addEventListener('change', function () {
+                calendar.refetchEvents();
+            });
+        });
+    </script>
+}
