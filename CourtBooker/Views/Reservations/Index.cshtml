@@ -4,67 +4,89 @@
     ViewData["Title"] = "Rezerwacje";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>@(User.IsInRole("Admin") ? "Wszystkie Rezerwacje" : "Moje Rezerwacje")</h2>
-    <a asp-action="Create" class="btn btn-success">Zarezerwuj kort</a>
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h3 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-calendar-check text-emerald me-2"></i>
+                    @(User.IsInRole("Admin") ? "Zarządzanie Rezerwacjami" : "Moje Rezerwacje")
+                </h3>
+                <p class="text-muted small mb-0">Przeglądaj, edytuj i zarządzaj terminami kortów</p>
+            </div>
+            <a asp-action="Create" class="btn btn-emerald text-white rounded-pill px-4 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> Nowa rezerwacja
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark bg-dark-emerald text-white">
+                    <tr>
+                        <th class="py-3 px-3 rounded-start">Kort</th>
+                        <th class="py-3">Użytkownik</th>
+                        <th class="py-3">Data</th>
+                        <th class="py-3">Godziny</th>
+                        <th class="py-3">Koszt</th>
+                        <th class="py-3">Status</th>
+                        <th class="py-3 text-end px-3 rounded-end">Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold px-3">
+                                <i class="bi bi-dribbble text-emerald me-1"></i> @item.Court?.Name
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(item.User?.Name) ? "Brak imienia" : item.User.Name)</span>
+                                <br />
+                                <small class="text-muted">@item.User?.Email</small>
+                            </td>
+                            <td>@item.Date.ToString("dd.MM.yyyy")</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-clock me-1"></i> @item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")
+                                </span>
+                            </td>
+                            <td class="fw-bold text-success">@item.TotalPrice.ToString("N2") zł</td>
+                            <td>
+                                <span class="badge badge-status @(item.Status switch {
+                                    "Confirmed" => "bg-success-subtle text-success border border-success",
+                                    "In Progress" => "bg-primary-subtle text-primary border border-primary",
+                                    "Completed" => "bg-secondary-subtle text-secondary border border-secondary",
+                                    "Zakończona" => "bg-secondary-subtle text-secondary border border-secondary",
+                                    "Cancelled" => "bg-danger-subtle text-danger border border-danger",
+                                    "Anulowano" => "bg-danger-subtle text-danger border border-danger",
+                                    _ => "bg-warning-subtle text-warning-emphasis border border-warning"
+                                })">
+                                    @item.Status
+                                </span>
+                            </td>
+                            <td class="text-end px-3">
+                                <div class="btn-group">
+                                    @if (User.IsInRole("Admin") || (item.InternalStatus != "Cancelled" && item.Status != "Zakończona" && item.Status != "Completed"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill me-1 px-3">
+                                            <i class="bi bi-pencil me-1"></i> Edytuj
+                                        </a>
+                                    }
+
+                                    @if (User.IsInRole("Admin") || (item.InternalStatus != "Cancelled" && item.Status != "Zakończona" && item.Status != "Completed"))
+                                    {
+                                        <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="return confirm('Czy na pewno chcesz anulować tę rezerwację?')">
+                                                <i class="bi bi-x-circle me-1"></i> Anuluj
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
-<table class="table table-striped align-middle">
-    <thead class="table-dark">
-        <tr>
-            <th>Kort</th>
-            <th>Użytkownik</th>
-            <th>Data</th>
-            <th>Godziny</th>
-            <th>Koszt</th>
-            <th>Status</th>
-            <th>Akcje</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Court?.Name</td>
-                <td>
-                    <strong>@(string.IsNullOrEmpty(item.User?.Name) ? "Brak imienia" : item.User.Name)</strong>
-                    <br />
-                    <small class="text-muted">@item.User?.Email</small>
-                </td>
-                <td>@item.Date.ToString("dd.MM.yyyy")</td>
-                <td>@item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")</td>
-                <td>@item.TotalPrice.ToString("N2") zł</td>
-                <td>
-                    <span class="badge @(item.Status switch {
-                        "Confirmed" => "bg-success",
-                        "In Progress" => "bg-primary",
-                        "Completed" => "bg-secondary",
-                        "Zakończona" => "bg-secondary",
-                        "Cancelled" => "bg-danger",
-                        "Anulowano" => "bg-danger",
-                        _ => "bg-warning text-dark"
-                    })">
-                        @item.Status
-                    </span>
-                </td>
-                <td>
-                    <div class="btn-group">
-                        @if (item.InternalStatus != "Cancelled" && item.Status != "Zakończona" && item.Status != "Completed")
-                        {
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning me-1">Edytuj</a>
-                        }
-
-                        @if (User.IsInRole("Admin") || (item.InternalStatus != "Cancelled" && item.Status != "Zakończona" && item.Status != "Completed"))
-                        {
-                            <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Czy na pewno chcesz anulować tę rezerwację?')">
-                                    Anuluj
-                                </button>
-                            </form>
-                        }
-                    </div>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>

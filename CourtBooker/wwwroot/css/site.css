@@ -1,0 +1,63 @@
+﻿:root {
+    --emerald-primary: #0f5132;
+    --emerald-hover: #0b3d26;
+    --emerald-accent: #198754;
+    --emerald-light: #e8f5e9;
+    --dark-bg: #1a252c;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #2c3e50;
+}
+
+.bg-dark-emerald {
+    background-color: var(--dark-bg) !important;
+}
+
+.text-emerald {
+    color: var(--emerald-accent) !important;
+}
+
+.btn-emerald {
+    background-color: var(--emerald-accent);
+    border-color: var(--emerald-accent);
+}
+
+    .btn-emerald:hover {
+        background-color: var(--emerald-hover);
+        border-color: var(--emerald-hover);
+        color: white;
+    }
+
+.hover-white:hover {
+    color: #ffffff !important;
+}
+
+.card {
+    border-radius: 12px;
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.table-custom {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+}
+
+    .table-custom thead {
+        background-color: var(--dark-bg);
+        color: white;
+    }
+
+.badge-status {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+    border-radius: 6px;
+}

@@ -2,47 +2,50 @@
     ViewData["Title"] = "Strona Główna";
 }
 
-<div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
-    <div class="container-fluid py-3">
-        <h1 class="display-5 fw-bold">Witaj w CourtBooker!</h1>
-        <p class="col-md-8 fs-4">System rezerwacji kortów tenisowych online. Wybierz dogodny termin i zarezerwuj swój kort w kilka sekund.</p>
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm border border-light">
+    <div class="container-fluid py-2">
+        <h1 class="display-5 fw-bold text-dark mb-3">Zagraj na najlepszych kortach</h1>
+        <p class="col-md-8 fs-5 text-secondary mb-4">Szybka rezerwacja w dogodnych slotach czasowych. Zapewnij sobie czas na grę w kilka kliknięć.</p>
 
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <a class="btn btn-primary btn-lg" asp-controller="Reservations" asp-action="Create">Zarezerwuj kort teraz</a>
+            <a class="btn btn-emerald btn-lg rounded-pill px-4 text-white shadow-sm" asp-controller="Reservations" asp-action="Create">
+                <i class="bi bi-calendar-plus me-1"></i> Zarezerwuj kort teraz
+            </a>
         }
         else
         {
-            <a class="btn btn-primary btn-lg me-2" asp-controller="Account" asp-action="Register">Zarejestruj się</a>
-            <a class="btn btn-outline-secondary btn-lg" asp-controller="Account" asp-action="Login">Zaloguj się</a>
+            <a class="btn btn-emerald btn-lg rounded-pill px-4 me-2 text-white shadow-sm" asp-controller="Account" asp-action="Register">Dołącz teraz</a>
+            <a class="btn btn-outline-secondary btn-lg rounded-pill px-4" asp-controller="Account" asp-action="Login">Zaloguj się</a>
         }
     </div>
 </div>
 
-<div class="row text-center mt-4">
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 shadow-sm">
+<div class="row text-center g-4">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm card-hover p-3">
             <div class="card-body">
-                <h5 class="card-title">Szybka Rezerwacja</h5>
-                <p class="card-text">Wybierz kort oraz godziny i zarezerwuj rozgrywkę w 30-minutowych slotach.</p>
-                <a asp-controller="Reservations" asp-action="Create" class="btn btn-outline-primary btn-sm">Zarezerwuj</a>
+                <div class="fs-1 text-emerald mb-2"><i class="bi bi-clock-history"></i></div>
+                <h5 class="card-title fw-bold">Elastyczne Sloty</h5>
+                <p class="card-text text-muted small">System 30-minutowych bloków czasowych pozwalający na precyzyjne planowanie rozgrywek.</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 shadow-sm">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm card-hover p-3">
             <div class="card-body">
-                <h5 class="card-title">Moje Rezerwacje</h5>
-                <p class="card-text">Przeglądaj historię swoich rezerwacji oraz sprawdzaj ich aktualny status.</p>
-                <a asp-controller="Reservations" asp-action="Index" class="btn btn-outline-primary btn-sm">Zobacz historię</a>
+                <div class="fs-1 text-emerald mb-2"><i class="bi bi-shield-check"></i></div>
+                <h5 class="card-title fw-bold">Bezpieczna Rezerwacja</h5>
+                <p class="card-text text-muted small">Automatyczne wykrywanie kolizji terminów zapobiega podwójnym rezerwacjom.</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 shadow-sm">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm card-hover p-3">
             <div class="card-body">
-                <h5 class="card-title">Wsparcie i Kontakt</h5>
-                <p class="card-text">Masz pytania dotyczące rezerwacji lub obiektów? Skontaktuj się z obsługą.</p>
+                <div class="fs-1 text-emerald mb-2"><i class="bi bi-person-lines-fill"></i></div>
+                <h5 class="card-title fw-bold">Pełna Historia</h5>
+                <p class="card-text text-muted small">Przeglądaj wszystkie swoje nadchodzące oraz zakończone spotkania w jednym miejscu.</p>
             </div>
         </div>
     </div>
