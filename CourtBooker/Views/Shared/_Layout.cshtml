@@ -10,65 +10,113 @@
 </head>
 <body class="bg-light d-flex flex-column min-vh-100">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-dark bg-dark-emerald shadow-sm py-3">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark-emerald shadow-sm py-3">
             <div class="container">
-                <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
+                <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2"
+                   asp-controller="Home" asp-action="Index">
                     <i class="bi bi-circle-square text-emerald"></i>
                     <span>Court<span class="text-emerald">Booker</span></span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1 ms-3">
+
+                <div class="navbar-collapse collapse justify-content-between">
+                    <ul class="navbar-nav ms-3">
                         <li class="nav-item">
-                            <a class="nav-link text-white-50 hover-white" asp-controller="Home" asp-action="Index">Strona Główna</a>
+                            <a class="nav-link text-white-50"
+                               asp-controller="Home" asp-action="Index">
+                                Strona główna
+                            </a>
                         </li>
+
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-white-50 hover-white" asp-controller="Reservations" asp-action="Calendar">
-                                    <i class="bi bi-calendar3 me-1"></i> Kalendarz
+                                <a class="nav-link text-white-50"
+                                   asp-controller="Reservations" asp-action="Calendar">
+                                    Kalendarz
                                 </a>
                             </li>
+
                             <li class="nav-item">
-                                <a class="nav-link text-white-50 hover-white" asp-controller="Reservations" asp-action="Index">Rezerwacje</a>
+                                <a class="nav-link text-white-50"
+                                   asp-controller="Reservations" asp-action="Index">
+                                    @(User.IsInRole("Admin") ? "Rezerwacje" : "Moje rezerwacje")
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-white-50"
+                                   asp-controller="Account" asp-action="Profile">
+                                    Moje konto
+                                </a>
                             </li>
 
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-white-50 hover-white" asp-controller="Courts" asp-action="Index">Korty</a>
+                                    <a class="nav-link text-white-50"
+                                       asp-controller="Courts" asp-action="Index">
+                                        Korty
+                                    </a>
                                 </li>
+
                                 <li class="nav-item">
-                                    <a class="nav-link text-white-50 hover-white" asp-controller="Users" asp-action="Index">Użytkownicy</a>
+                                    <a class="nav-link text-white-50"
+                                       asp-controller="Users" asp-action="Index">
+                                        Użytkownicy
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link text-white-50"
+                                       asp-controller="Reports" asp-action="Index">
+                                        Raporty
+                                    </a>
                                 </li>
                             }
                         }
                     </ul>
+
                     <ul class="navbar-nav align-items-center gap-2">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <li class="nav-item text-white-50 small me-2">
-                                <i class="bi bi-person-circle text-emerald me-1"></i> @User.Identity.Name
+                            <li class="nav-item text-white-50 small">
+                                <i class="bi bi-person-circle text-emerald"></i>
+                                @User.Identity.Name
+
                                 @if (User.IsInRole("Admin"))
                                 {
-                                    <span class="badge bg-warning text-dark ms-1">Admin</span>
+                                    <span class="badge bg-warning text-dark">Admin</span>
                                 }
                             </li>
+
                             <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-light btn-sm rounded-pill px-3">Wyloguj</button>
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button type="submit"
+                                            class="btn btn-outline-light btn-sm rounded-pill px-3">
+                                        Wyloguj
+                                    </button>
                                 </form>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-white-50 hover-white" asp-controller="Account" asp-action="Login">Zaloguj się</a>
+                                <a class="nav-link text-white-50"
+                                   asp-controller="Account" asp-action="Login">
+                                    Zaloguj się
+                                </a>
                             </li>
+
                             <li class="nav-item">
-                                <a class="btn btn-emerald btn-sm rounded-pill px-3 text-white" asp-controller="Account" asp-action="Register">Zarejestruj się</a>
+                                <a class="btn btn-emerald btn-sm rounded-pill px-3 text-white"
+                                   asp-controller="Account" asp-action="Register">
+                                    Zarejestruj się
+                                </a>
                             </li>
                         }
                     </ul>
@@ -90,5 +138,20 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        function togglePassword(id, button) {
+            const input = document.getElementById(id);
+            if (!input) return;
+
+            const show = input.type === "password";
+            input.type = show ? "text" : "password";
+
+            const icon = button.querySelector("i");
+            icon.className = show ? "bi bi-eye-slash" : "bi bi-eye";
+
+            button.setAttribute("aria-label", show ? "Ukryj hasło" : "Pokaż hasło");
+        }
+    </script>
 </body>
 </html>

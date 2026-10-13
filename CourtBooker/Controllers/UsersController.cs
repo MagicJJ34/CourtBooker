@@ -2,9 +2,12 @@
 using CourtBooker.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace CourtBooker.Controllers;
 
+[Authorize(Roles = "Admin")]
 public class UsersController : Controller
 {
     private readonly AppDbContext _context;

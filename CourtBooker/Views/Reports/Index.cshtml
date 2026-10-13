@@ -1,0 +1,88 @@
+﻿@model IEnumerable<CourtBooker.Models.Reservation>
+
+@{
+    ViewData["Title"] = "Raporty";
+}
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4">
+        <h3 class="fw-bold mb-4">
+            <i class="bi bi-bar-chart text-success"></i>
+            Raporty rezerwacji
+        </h3>
+
+        <form asp-action="Index" method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Data od</label>
+                <input type="date" name="from" class="form-control"
+                       value="@ViewBag.From" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Data do</label>
+                <input type="date" name="to" class="form-control"
+                       value="@ViewBag.To" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-emerald text-white w-100">
+                    Generuj raport
+                </button>
+            </div>
+        </form>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="bg-light rounded-3 p-3">
+                    <div class="text-muted">Wszystkie rezerwacje</div>
+                    <h3>@ViewBag.Count</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-light rounded-3 p-3">
+                    <div class="text-muted">Anulowane</div>
+                    <h3>@ViewBag.Cancelled</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-light rounded-3 p-3">
+                    <div class="text-muted">Wartość rezerwacji aktywnych</div>
+                    <h3>@(((decimal)ViewBag.Revenue).ToString("N2")) zł</h3>
+                </div>
+            </div>
+        </div>
+
+        <a asp-action="Download"
+           asp-route-from="@ViewBag.From"
+           asp-route-to="@ViewBag.To"
+           class="btn btn-success mb-4">
+            <i class="bi bi-download"></i> Pobierz CSV
+        </a>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Kort</th>
+                        <th>Użytkownik</th>
+                        <th>Data</th>
+                        <th>Godziny</th>
+                        <th>Status</th>
+                        <th>Kwota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td>@r.Court?.Name</td>
+                            <td>@r.User?.Email</td>
+                            <td>@r.Date.ToString("dd.MM.yyyy")</td>
+                            <td>@r.StartTime.ToString("HH:mm") - @r.EndTime.ToString("HH:mm")</td>
+                            <td>@r.Status</td>
+                            <td>@r.TotalPrice.ToString("N2") zł</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
