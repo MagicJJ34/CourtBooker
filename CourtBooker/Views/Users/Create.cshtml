@@ -1,32 +1,63 @@
-﻿@model CourtBooker.Models.User
+﻿@model CourtBooker.Models.CreateUserViewModel
 
 @{
-    ViewData["Title"] = "Dodaj Użytkownika";
+    ViewData["Title"] = "Dodaj użytkownika";
 }
 
-<h2>Dodaj Nowego Użytkownika</h2>
+<div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width:650px">
+    <div class="card-body p-4">
+        <h3 class="fw-bold mb-4">
+            <i class="bi bi-person-plus text-success"></i>
+            Dodaj użytkownika
+        </h3>
 
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
-    <div class="form-group mb-3">
-        <label class="control-label">Imię i Nazwisko</label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Imię i nazwisko</label>
+                <input asp-for="Name" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Adres e-mail</label>
+                <input asp-for="Email" type="email" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">Hasło</label>
+                <div class="input-group">
+                    <input asp-for="Password" type="password"
+                           class="form-control" autocomplete="new-password" />
+                    <button type="button" class="btn btn-outline-secondary"
+                            aria-label="Pokaż hasło"
+                            onclick="togglePassword('Password', this)">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="ConfirmPassword" class="form-label">
+                    Powtórz hasło
+                </label>
+                <div class="input-group">
+                    <input asp-for="ConfirmPassword" type="password"
+                           class="form-control" autocomplete="new-password" />
+                    <button type="button" class="btn btn-outline-secondary"
+                            aria-label="Pokaż hasło"
+                            onclick="togglePassword('ConfirmPassword', this)">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-emerald text-white">
+                Dodaj użytkownika
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                Powrót
+            </a>
+        </form>
     </div>
-
-    <div class="form-group mb-3">
-        <label class="control-label">Adres Email</label>
-        <input asp-for="Email" class="form-control" type="email" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-
-    <div class="form-group mb-3">
-        <label class="control-label">Hasło</label>
-        <input asp-for="PasswordHash" class="form-control" type="password" />
-        <span asp-validation-for="PasswordHash" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Dodaj Użytkownika</button>
-    <a asp-action="Index" class="btn btn-secondary">Powrót</a>
-</form>
+</div>

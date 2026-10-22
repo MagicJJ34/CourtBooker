@@ -44,6 +44,15 @@ public class AccountController : Controller
             return View(model);
         }
 
+        if (!user.IsActive)
+        {
+            ModelState.AddModelError(
+                "",
+                "Twoje konto zostało dezaktywowane. Skontaktuj się z administratorem.");
+
+            return View(model);
+        }
+
         if (!user.PasswordHash.StartsWith("AQAAAA"))
         {
             user.PasswordHash = _hasher.HashPassword(user, model.Password);
@@ -79,7 +88,8 @@ public class AccountController : Controller
         {
             Name = model.Name,
             Email = model.Email,
-            Role = "User"
+            Role = "User",
+            IsActive = true
         };
 
         user.PasswordHash = _hasher.HashPassword(user, model.Password);
@@ -124,18 +134,29 @@ public class AccountController : Controller
         if (await _context.Users.AnyAsync(
             u => u.Email == model.Email && u.Id != id))
         {
-            ModelState.AddModelError("Email", "Ten adres e-mail jest już zajęty.");
+            ModelState.AddModelError(
+                "Email",
+                "Ten adres e-mail jest już zajęty.");
         }
 
-        bool changePassword = !string.IsNullOrWhiteSpace(model.NewPassword);
+        bool changePassword =
+            !string.IsNullOrWhiteSpace(model.NewPassword);
 
         if (changePassword)
         {
             if (!VerifyPassword(user, model.CurrentPassword))
-                ModelState.AddModelError("CurrentPassword", "Nieprawidłowe obecne hasło.");
+            {
+                ModelState.AddModelError(
+                    "CurrentPassword",
+                    "Nieprawidłowe obecne hasło.");
+            }
 
             if (model.NewPassword != model.ConfirmPassword)
-                ModelState.AddModelError("ConfirmPassword", "Hasła nie są zgodne.");
+            {
+                ModelState.AddModelError(
+                    "ConfirmPassword",
+                    "Hasła nie są zgodne.");
+            }
         }
 
         if (!ModelState.IsValid)
@@ -145,7 +166,10 @@ public class AccountController : Controller
         user.Email = model.Email;
 
         if (changePassword)
-            user.PasswordHash = _hasher.HashPassword(user, model.NewPassword!);
+        {
+            user.PasswordHash = _hasher.HashPassword(
+                user, model.NewPassword!);
+        }
 
         await _context.SaveChangesAsync();
         await SignIn(user);
@@ -159,7 +183,9 @@ public class AccountController : Controller
         if (user.PasswordHash.StartsWith("AQAAAA"))
         {
             return _hasher.VerifyHashedPassword(
-                user, user.PasswordHash, password) != PasswordVerificationResult.Failed;
+                user,
+                user.PasswordHash,
+                password) != PasswordVerificationResult.Failed;
         }
 
         return user.PasswordHash == password;
@@ -176,7 +202,8 @@ public class AccountController : Controller
         };
 
         var identity = new ClaimsIdentity(
-            claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme);
 
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
