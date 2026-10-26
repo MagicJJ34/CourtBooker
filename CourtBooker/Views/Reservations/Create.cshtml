@@ -1,58 +1,352 @@
 ﻿@model CourtBooker.Models.Reservation
+@using CourtBooker.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Text.Json
+@inject AppDbContext Db
 
 @{
-    ViewData["Title"] = "Nowa Rezerwacja";
+    ViewData["Title"] = "Nowa rezerwacja";
+
+    var courts = await Db.Courts
+        .AsNoTracking()
+        .Select(c => new { c.Id, c.PricePerHour })
+        .ToListAsync();
+
+    var courtPrices = courts.ToDictionary(
+        c => c.Id.ToString(),
+        c => c.PricePerHour
+    );
+
+    var pricesJson = JsonSerializer.Serialize(courtPrices);
 
     var timeSlots = new List<SelectListItem>();
-    for (int hour = 6; hour <= 22; hour++)
-    {
-        var t1 = new TimeOnly(hour, 0).ToString("HH:mm");
-        timeSlots.Add(new SelectListItem { Text = t1, Value = t1 });
 
-        if (hour < 22)
+    for (int hour = 6; hour <= 23; hour++)
+    {
+        var fullHour = new TimeOnly(hour, 0).ToString("HH:mm");
+
+        timeSlots.Add(new SelectListItem
+                {
+                    Text = fullHour,
+                    Value = fullHour
+                });
+
+        if (hour < 23)
         {
-            var t2 = new TimeOnly(hour, 30).ToString("HH:mm");
-            timeSlots.Add(new SelectListItem { Text = t2, Value = t2 });
+            var halfHour = new TimeOnly(hour, 30).ToString("HH:mm");
+
+            timeSlots.Add(new SelectListItem
+                    {
+                        Text = halfHour,
+                        Value = halfHour
+                    });
         }
     }
+
+    var selectedDate = Model.Date == default
+        ? DateTime.Today.ToString("yyyy-MM-dd")
+        : Model.Date.ToString("yyyy-MM-dd");
+
+    var selectedStart = Model.StartTime == default
+        ? "06:00"
+        : Model.StartTime.ToString("HH:mm");
+
+    var selectedEnd = Model.EndTime == default
+        ? "07:00"
+        : Model.EndTime.ToString("HH:mm");
 }
 
-<h2>Nowa Rezerwacja</h2>
-
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-    <div class="form-group mb-3">
-        <label class="control-label">Wybierz Kort</label>
-        <select asp-for="CourtId" class="form-select" asp-items="ViewBag.CourtId"></select>
-    </div>
-
-    @if (User.IsInRole("Admin"))
-    {
-        <div class="form-group mb-3">
-            <label class="control-label">Wybierz Użytkownika</label>
-            <select asp-for="UserId" class="form-select" asp-items="ViewBag.UserId"></select>
-        </div>
+<style>
+    .validation-summary-box.validation-summary-valid {
+        display: none;
     }
 
-    <div class="form-group mb-3">
-        <label class="control-label">Data rezerwacji</label>
-        <input asp-for="Date" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
-        <span asp-validation-for="Date" class="text-danger"></span>
+    .price-summary {
+        background: #eef8f0;
+        border: 1px solid #cce8d2;
+        border-radius: 14px;
+        padding: 18px;
+    }
+</style>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="Calendar"
+       class="btn btn-outline-secondary rounded-circle">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+
+    <div>
+        <h2 class="fw-bold mb-1">Nowa rezerwacja</h2>
+        <p class="text-muted mb-0">
+            Wybierz kort, datę i godziny gry
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+
+                <form asp-action="Create"
+                      method="post"
+                      id="reservationForm">
+
+                    <div asp-validation-summary="All"
+                         class="alert alert-danger mb-4 validation-summary-box"
+                         id="validationSummary"></div>
+
+                    <div class="mb-4">
+                        <label asp-for="CourtId"
+                               class="form-label fw-semibold">
+                            Kort tenisowy
+                        </label>
+
+                        <select asp-for="CourtId"
+                                class="form-select form-select-lg"
+                                asp-items="ViewBag.CourtId"
+                                id="courtSelect"></select>
+
+                        <span asp-validation-for="CourtId"
+                              class="text-danger small"></span>
+                    </div>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="mb-4">
+                            <label asp-for="UserId"
+                                   class="form-label fw-semibold">
+                                Użytkownik
+                            </label>
+
+                            <select asp-for="UserId"
+                                    class="form-select"
+                                    asp-items="ViewBag.UserId"></select>
+
+                            <span asp-validation-for="UserId"
+                                  class="text-danger small"></span>
+                        </div>
+                    }
+
+                    <div class="mb-4">
+                        <label asp-for="Date"
+                               class="form-label fw-semibold">
+                            Data rezerwacji
+                        </label>
+
+                        <input asp-for="Date"
+                               type="date"
+                               class="form-control form-control-lg"
+                               id="reservationDate"
+                               value="@selectedDate"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                        <span asp-validation-for="Date"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="StartTime"
+                                   class="form-label fw-semibold">
+                                Godzina rozpoczęcia
+                            </label>
+
+                            <select asp-for="StartTime"
+                                    class="form-select form-select-lg"
+                                    asp-items="timeSlots"
+                                    id="startTimeSelect"></select>
+
+                            <span asp-validation-for="StartTime"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="EndTime"
+                                   class="form-label fw-semibold">
+                                Godzina zakończenia
+                            </label>
+
+                            <select asp-for="EndTime"
+                                    class="form-select form-select-lg"
+                                    asp-items="timeSlots"
+                                    id="endTimeSelect"></select>
+
+                            <span asp-validation-for="EndTime"
+                                  class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div id="timeError"
+                         class="alert alert-warning d-none"></div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit"
+                                class="btn btn-emerald text-white px-4"
+                                id="submitReservation">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Zarezerwuj
+                        </button>
+
+                        <a asp-action="Calendar"
+                           class="btn btn-outline-secondary">
+                            Wróć do kalendarza
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <div class="form-group mb-3">
-        <label class="control-label">Początek rezerwacji</label>
-        <select asp-for="StartTime" class="form-select" asp-items="timeSlots"></select>
-        <span asp-validation-for="StartTime" class="text-danger"></span>
-    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-receipt text-success me-2"></i>
+                    Podsumowanie rezerwacji
+                </h5>
 
-    <div class="form-group mb-3">
-        <label class="control-label">Koniec rezerwacji</label>
-        <select asp-for="EndTime" class="form-select" asp-items="timeSlots"></select>
-        <span asp-validation-for="EndTime" class="text-danger"></span>
-    </div>
+                <p class="text-muted small mb-1">Kort</p>
+                <p class="fw-semibold mb-3" id="summaryCourt">—</p>
 
-    <button type="submit" class="btn btn-primary">Zarezerwuj</button>
-    <a asp-action="Index" class="btn btn-secondary">Powrót</a>
-</form>
+                <p class="text-muted small mb-1">Data gry</p>
+                <p class="fw-semibold mb-3" id="summaryDate">—</p>
+
+                <p class="text-muted small mb-1">Godziny</p>
+                <p class="fw-semibold mb-3" id="summaryHours">—</p>
+
+                <p class="text-muted small mb-1">Czas gry</p>
+                <p class="fw-semibold mb-3" id="summaryDuration">—</p>
+
+                <hr />
+
+                <p class="text-muted small mb-1">Cena za godzinę</p>
+                <p class="fw-semibold mb-3" id="summaryHourlyPrice">—</p>
+
+                <div class="price-summary">
+                    <p class="text-muted small mb-1">
+                        Łączna cena rezerwacji
+                    </p>
+
+                    <h2 class="fw-bold text-success mb-0"
+                        id="summaryTotalPrice">
+                        — zł
+                    </h2>
+                </div>
+
+                <p class="text-muted small mt-3 mb-0">
+                    Ostateczna cena i dostępność terminu
+                    zostaną sprawdzone podczas zapisywania rezerwacji.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const courtPrices = @Html.Raw(pricesJson);
+
+            const court = document.getElementById('courtSelect');
+            const date = document.getElementById('reservationDate');
+            const start = document.getElementById('startTimeSelect');
+            const end = document.getElementById('endTimeSelect');
+            const timeError = document.getElementById('timeError');
+            const submit = document.getElementById('submitReservation');
+
+            const summaryCourt = document.getElementById('summaryCourt');
+            const summaryDate = document.getElementById('summaryDate');
+            const summaryHours = document.getElementById('summaryHours');
+            const summaryDuration = document.getElementById('summaryDuration');
+            const summaryHourlyPrice = document.getElementById('summaryHourlyPrice');
+            const summaryTotalPrice = document.getElementById('summaryTotalPrice');
+
+            const initialStart = '@selectedStart';
+            const initialEnd = '@selectedEnd';
+
+            start.value = initialStart;
+            end.value = initialEnd;
+
+            const moneyFormatter = new Intl.NumberFormat('pl-PL', {
+                style: 'currency',
+                currency: 'PLN'
+            });
+
+            function toMinutes(value) {
+                if (!value) {
+                    return 0;
+                }
+
+                const parts = value.split(':').map(Number);
+                return parts[0] * 60 + parts[1];
+            }
+
+            function updateSummary() {
+                const startMinutes = toMinutes(start.value);
+                const endMinutes = toMinutes(end.value);
+                const duration = endMinutes - startMinutes;
+
+                const selectedCourtId = court.value;
+                const hourlyPrice = courtPrices[selectedCourtId];
+
+                summaryCourt.textContent =
+                    court.options[court.selectedIndex]?.text || '—';
+
+                summaryDate.textContent = date.value
+                    ? date.value.split('-').reverse().join('.')
+                    : '—';
+
+                summaryHours.textContent =
+                    start.value + ' – ' + end.value;
+
+                summaryHourlyPrice.textContent =
+                    hourlyPrice !== undefined
+                        ? moneyFormatter.format(hourlyPrice)
+                        : '—';
+
+                if (duration <= 0) {
+                    timeError.textContent =
+                        'Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia.';
+
+                    timeError.classList.remove('d-none');
+
+                    summaryDuration.textContent = 'Nieprawidłowe godziny';
+                    summaryTotalPrice.textContent = '— zł';
+
+                    submit.disabled = true;
+                    return;
+                }
+
+                timeError.classList.add('d-none');
+
+                const hours = Math.floor(duration / 60);
+                const minutes = duration % 60;
+
+                summaryDuration.textContent =
+                    hours + ' godz.' +
+                    (minutes ? ' ' + minutes + ' min' : '');
+
+                if (hourlyPrice === undefined) {
+                    summaryTotalPrice.textContent = '— zł';
+                    submit.disabled = true;
+                    return;
+                }
+
+                const totalPrice = hourlyPrice * duration / 60;
+
+                summaryTotalPrice.textContent =
+                    moneyFormatter.format(totalPrice);
+
+                submit.disabled = false;
+            }
+
+            court.addEventListener('change', updateSummary);
+            date.addEventListener('change', updateSummary);
+            start.addEventListener('change', updateSummary);
+            end.addEventListener('change', updateSummary);
+
+            updateSummary();
+        });
+    </script>
+}

@@ -57,6 +57,14 @@
 
                             @if (User.IsInRole("Admin"))
                             {
+
+                                <li class="nav-item">
+                                    <a class="nav-link text-white-50"
+                                       asp-controller="Dashboard" asp-action="Index">
+                                        Panel administratora
+                                    </a>
+                                </li>
+
                                 <li class="nav-item">
                                     <a class="nav-link text-white-50"
                                        asp-controller="Courts" asp-action="Index">

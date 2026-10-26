@@ -75,7 +75,7 @@ public class ReservationsController : Controller
                 User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         }
 
-        if (!await _context.Users.AnyAsync(u => u.Id == reservation.UserId))
+        if (!await _context.Users.AnyAsync(u => u.Id == reservation.UserId && u.IsActive))
             ModelState.AddModelError("UserId", "Wybierz użytkownika.");
 
         var court = await _context.Courts.FindAsync(reservation.CourtId);
@@ -149,7 +149,7 @@ public class ReservationsController : Controller
         if (!User.IsInRole("Admin"))
             model.UserId = reservation.UserId;
 
-        if (!await _context.Users.AnyAsync(u => u.Id == model.UserId))
+        if (!await _context.Users.AnyAsync(u => u.Id == model.UserId && u.IsActive))
             ModelState.AddModelError("UserId", "Wybierz użytkownika.");
 
         var court = await _context.Courts.FindAsync(model.CourtId);
@@ -213,24 +213,47 @@ public class ReservationsController : Controller
                         r.InternalStatus != "Anulowano");
 
         if (courtId.HasValue && courtId.Value > 0)
-            query = query.Where(r => r.CourtId == courtId.Value);
-
-        if (!User.IsInRole("Admin"))
         {
-            int userId = int.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            query = query.Where(r => r.UserId == userId);
+            query = query.Where(r => r.CourtId == courtId.Value);
         }
 
-        var reservations = await query.ToListAsync();
+        var reservations = await query
+            .AsNoTracking()
+            .ToListAsync();
 
-        return Json(reservations.Select(r => new
+        bool isAdmin = User.IsInRole("Admin");
+
+        int currentUserId = int.Parse(
+            User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        return Json(reservations.Select(r =>
         {
-            id = r.Id,
-            title = $"{r.Court?.Name ?? "Kort"} - {r.User?.Name ?? r.User?.Email}",
-            start = $"{r.Date:yyyy-MM-dd}T{r.StartTime:HH\\:mm\\:ss}",
-            end = $"{r.Date:yyyy-MM-dd}T{r.EndTime:HH\\:mm\\:ss}",
-            color = "#198754"
+            bool isOwner = r.UserId == currentUserId;
+
+            string title;
+
+            if (isAdmin)
+            {
+                title = $"{r.Court?.Name ?? "Kort"} - {r.User?.Name ?? "Użytkownik"}";
+            }
+            else if (isOwner)
+            {
+                title = $"{r.Court?.Name ?? "Kort"} - Twoja rezerwacja";
+            }
+            else
+            {
+                title = $"{r.Court?.Name ?? "Kort"} - Zajęty";
+            }
+
+            return new
+            {
+                id = r.Id,
+                title = title,
+                start = $"{r.Date:yyyy-MM-dd}T{r.StartTime:HH\\:mm\\:ss}",
+                end = $"{r.Date:yyyy-MM-dd}T{r.EndTime:HH\\:mm\\:ss}",
+                color = isOwner ? "#198754" : "#dc3545",
+                courtId = r.CourtId
+            };
         }));
     }
 
@@ -277,10 +300,17 @@ public class ReservationsController : Controller
     private async Task LoadLists(int? courtId = null, int? userId = null)
     {
         ViewBag.CourtId = new SelectList(
-            await _context.Courts.ToListAsync(), "Id", "Name", courtId);
+            await _context.Courts.ToListAsync(),
+            "Id", "Name", courtId);
 
         if (User.IsInRole("Admin"))
+        {
             ViewBag.UserId = new SelectList(
-                await _context.Users.ToListAsync(), "Id", "Email", userId);
+                await _context.Users
+                    .Where(u => u.IsActive)
+                    .OrderBy(u => u.Email)
+                    .ToListAsync(),
+                "Id", "Email", userId);
+        }
     }
 }

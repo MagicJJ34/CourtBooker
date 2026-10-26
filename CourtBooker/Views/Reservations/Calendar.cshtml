@@ -1,93 +1,661 @@
 ﻿@{
-    ViewData["Title"] = "Kalendarz Rezerwacji";
+    ViewData["Title"] = "Kalendarz rezerwacji";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 fw-bold text-dark mb-0">
-        <i class="bi bi-calendar3 me-2 text-emerald"></i>Kalendarz Rezerwacji
-    </h1>
-    <a asp-action="Create" class="btn btn-emerald rounded-pill px-4 text-white fw-bold shadow-sm">
-        <i class="bi bi-plus-lg me-1"></i>Nowa rezerwacja
-    </a>
-</div>
+<style>
+    .booking-calendar-page {
+        --calendar-green: #168451;
+        --calendar-dark: #174b36;
+        --calendar-light: #e8f6ed;
+        --calendar-border: #e4ebe7;
+    }
 
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <div class="row align-items-center">
-            <div class="col-md-4">
-                <label for="courtFilter" class="form-label fw-bold small text-muted">Filtruj według kortu:</label>
-                <select id="courtFilter" class="form-select" asp-items="ViewBag.CourtId">
-                    <option value="">-- Wszystkie korty --</option>
+    .calendar-heading {
+        font-weight: 800;
+        letter-spacing: -.6px;
+    }
+
+    .calendar-subtitle {
+        color: #75827b;
+        font-size: .94rem;
+    }
+
+    .calendar-panel {
+        border: 1px solid var(--calendar-border);
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 8px 28px rgba(20, 60, 40, .055);
+    }
+
+    .calendar-filter-label {
+        font-size: .78rem;
+        font-weight: 750;
+        color: #63766b;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .calendar-filter {
+        border: 1px solid #dbe6df;
+        border-radius: 11px;
+        min-height: 45px;
+    }
+
+        .calendar-filter:focus {
+            border-color: #168451;
+            box-shadow: 0 0 0 3px rgba(22, 132, 81, .12);
+        }
+
+    .calendar-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        font-size: .84rem;
+        color: #526258;
+    }
+
+    .legend-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 4px;
+        margin-right: 6px;
+    }
+
+    .calendar-hint {
+        font-size: .85rem;
+        color: #78877d;
+    }
+
+    .calendar-feedback {
+        border: none;
+        border-radius: 12px;
+        font-size: .9rem;
+        font-weight: 500;
+    }
+
+    .booking-calendar-page .fc {
+        font-family: inherit;
+        color: #263d30;
+    }
+
+        .booking-calendar-page .fc .fc-toolbar {
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 25px;
+        }
+
+        .booking-calendar-page .fc .fc-toolbar-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -.4px;
+            color: #244b35;
+        }
+
+        .booking-calendar-page .fc .fc-button-primary {
+            background: #f1f6f2;
+            border: 1px solid #e2ebe5;
+            border-radius: 9px;
+            color: #355443;
+            font-weight: 650;
+            font-size: .83rem;
+            padding: 9px 13px;
+            box-shadow: none;
+            text-transform: none;
+        }
+
+            .booking-calendar-page .fc .fc-button-primary:hover {
+                background: #e3f1e8;
+                border-color: #cce3d5;
+                color: #17613e;
+            }
+
+            .booking-calendar-page .fc .fc-button-primary.fc-button-active,
+            .booking-calendar-page .fc .fc-button-primary:active {
+                background: #168451;
+                border-color: #168451;
+                color: #fff;
+            }
+
+            .booking-calendar-page .fc .fc-button-primary:focus {
+                box-shadow: 0 0 0 3px rgba(22, 132, 81, .15);
+            }
+
+        .booking-calendar-page .fc .fc-button-group {
+            gap: 4px;
+        }
+
+            .booking-calendar-page .fc .fc-button-group > .fc-button {
+                border-radius: 9px;
+            }
+
+    .booking-calendar-page .fc-theme-standard td,
+    .booking-calendar-page .fc-theme-standard th,
+    .booking-calendar-page .fc-theme-standard .fc-scrollgrid {
+        border-color: #edf1ee;
+    }
+
+    .booking-calendar-page .fc .fc-col-header-cell {
+        background: #f7faf8;
+        padding: 13px 3px;
+    }
+
+    .booking-calendar-page .fc .fc-col-header-cell-cushion {
+        font-size: .84rem;
+        font-weight: 750;
+        color: #486653;
+        text-decoration: none;
+        text-transform: capitalize;
+    }
+
+    .booking-calendar-page .fc .fc-day-today {
+        background: rgba(22, 132, 81, .045) !important;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-slot {
+        height: 35px;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-slot-label {
+        vertical-align: top;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-slot-label-cushion {
+        padding: 0 12px 0 5px;
+        font-size: .78rem;
+        font-weight: 750;
+        color: #4c6255;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-slot-minor {
+        border-top-style: dashed;
+        border-top-color: #f0f3f0;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-col {
+        background: #fff;
+    }
+
+        .booking-calendar-page .fc .fc-timegrid-col.fc-day-today {
+            background: #f4faf6;
+        }
+
+    .booking-calendar-page .fc .fc-timegrid-col-frame {
+        cursor: pointer;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-now-indicator-line {
+        border-color: #e45c51;
+        border-width: 2px;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-now-indicator-arrow {
+        border-color: #e45c51;
+    }
+
+    .booking-calendar-page .fc .fc-timegrid-event {
+        border: 0;
+        border-left: 4px solid rgba(255,255,255,.45);
+        border-radius: 9px;
+        box-shadow: 0 2px 7px rgba(0,0,0,.10);
+        overflow: hidden;
+        margin: 1px 3px;
+    }
+
+        .booking-calendar-page .fc .fc-timegrid-event .fc-event-main {
+            padding: 4px 6px;
+        }
+
+    .booking-calendar-page .fc .fc-daygrid-event {
+        border: 0;
+        border-radius: 7px;
+        padding: 3px 5px;
+    }
+
+    .booking-calendar-page .fc .fc-bg-event {
+        opacity: 1;
+        border-radius: 8px;
+        border: 2px dashed #168451;
+        background: rgba(48, 179, 101, .24) !important;
+        pointer-events: none;
+    }
+
+    .booking-event-time {
+        font-weight: 800;
+        font-size: .76rem;
+        line-height: 1.25;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .booking-event-title {
+        font-size: .73rem;
+        line-height: 1.3;
+        font-weight: 550;
+        margin-top: 3px;
+        overflow-wrap: anywhere;
+    }
+
+    .booking-calendar-page .fc .fc-daygrid-day-number {
+        color: #365744;
+        font-weight: 650;
+        text-decoration: none;
+    }
+
+    .booking-calendar-page .fc .fc-daygrid-day-frame {
+        min-height: 90px;
+    }
+
+    @@media (max-width: 767px) {
+        .booking-calendar-page .fc .fc-toolbar {
+            justify-content: center;
+        }
+
+        .booking-calendar-page .fc .fc-toolbar-title {
+            font-size: 1.05rem;
+        }
+
+        .booking-calendar-page .fc .fc-timegrid-slot {
+            height: 39px;
+        }
+
+        .calendar-panel {
+            border-radius: 15px;
+        }
+
+        .booking-calendar-page .fc .fc-button-primary {
+            padding: 8px 10px;
+            font-size: .77rem;
+        }
+    }
+</style>
+
+<div class="booking-calendar-page">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 calendar-heading mb-1">
+                <i class="bi bi-calendar3 me-2 text-success"></i>
+                Kalendarz rezerwacji
+            </h1>
+            <p class="calendar-subtitle mb-0">
+                Sprawdź dostępność kortów i wybierz dogodną godzinę gry.
+            </p>
+        </div>
+
+        <a asp-action="Create"
+           class="btn btn-emerald rounded-pill px-4 text-white fw-bold shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nowa rezerwacja
+        </a>
+    </div>
+
+    <div class="calendar-panel p-3 p-md-4 mb-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-4">
+                <label for="courtFilter" class="calendar-filter-label form-label">
+                    Wybierz kort
+                </label>
+
+                <select id="courtFilter"
+                        class="form-select calendar-filter"
+                        asp-items="ViewBag.CourtId">
+                    <option value="">Wszystkie korty</option>
                 </select>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="calendar-legend mb-2">
+                    <span>
+                        <span class="legend-dot" style="background:#dc3545"></span>
+                        Zajęty
+                    </span>
+
+                    <span>
+                        <span class="legend-dot" style="background:#198754"></span>
+                        Twoja rezerwacja
+                    </span>
+
+                    <span>
+                        <span class="legend-dot" style="background:#a5d6a7"></span>
+                        Wybrany termin
+                    </span>
+                </div>
+
+                <p class="calendar-hint mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Kliknij godzinę rozpoczęcia, a następnie godzinę zakończenia.
+                </p>
             </div>
         </div>
     </div>
-</div>
 
-<div class="card border-0 shadow-sm p-3">
-    <div id="calendar"></div>
+    <div id="calendarMessage"
+         class="alert alert-success calendar-feedback d-none mb-3"
+         role="status"></div>
+
+    <div class="calendar-panel p-3 p-md-4">
+        <div id="calendar"></div>
+    </div>
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var calendarEl = document.getElementById('calendar');
-            var courtFilter = document.getElementById('courtFilter');
+            const calendarEl = document.getElementById('calendar');
+            const courtFilter = document.getElementById('courtFilter');
+            const messageEl = document.getElementById('calendarMessage');
 
-            var calendar = new FullCalendar.Calendar(calendarEl, {
+            let selectedStart = null;
+            let selectionEvent = null;
+            let eventsLoaded = false;
+
+            function formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+
+                return `${year}-${month}-${day}`;
+            }
+
+            function formatTime(date) {
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+
+                return `${hours}:${minutes}`;
+            }
+
+            function showMessage(message, isError = false) {
+                messageEl.textContent = message;
+                messageEl.classList.remove(
+                    'd-none', 'alert-success', 'alert-warning'
+                );
+                messageEl.classList.add(
+                    isError ? 'alert-warning' : 'alert-success'
+                );
+            }
+
+            function clearMessage() {
+                messageEl.textContent = '';
+                messageEl.classList.add('d-none');
+            }
+
+            function resetSelection() {
+                selectedStart = null;
+
+                if (selectionEvent) {
+                    selectionEvent.remove();
+                    selectionEvent = null;
+                }
+            }
+
+            function showSelection(start, end) {
+                if (selectionEvent) {
+                    selectionEvent.remove();
+                }
+
+                selectionEvent = calendar.addEvent({
+                    start: start,
+                    end: end,
+                    display: 'background',
+                    backgroundColor: '#a5d6a7',
+                    extendedProps: {
+                        temporarySelection: true
+                    }
+                });
+            }
+
+            function isOccupied(start, end) {
+                return calendar.getEvents().some(function (event) {
+                    if (event.extendedProps.temporarySelection) {
+                        return false;
+                    }
+
+                    return String(event.extendedProps.courtId) ===
+                        courtFilter.value &&
+                        start < event.end &&
+                        end > event.start;
+                });
+            }
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'pl',
-                initialView: 'timeGridWeek',
+
+                initialView: window.innerWidth < 768
+                    ? 'timeGridDay'
+                    : 'timeGridWeek',
+
+                firstDay: 1,
+                height: 'auto',
+                expandRows: true,
+                stickyHeaderDates: true,
+                dayMaxEvents: true,
+
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
+
                 buttonText: {
                     today: 'Dzisiaj',
                     month: 'Miesiąc',
                     week: 'Tydzień',
                     day: 'Dzień'
                 },
+
                 slotMinTime: '06:00:00',
                 slotMaxTime: '23:00:00',
+                slotDuration: '00:30:00',
+                snapDuration: '00:30:00',
+                slotLabelInterval: '01:00:00',
+                slotLabelFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
+
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
+
                 allDaySlot: false,
-                selectable: true,
+                selectable: false,
+                nowIndicator: true,
+                displayEventEnd: true,
+
+                datesSet: function () {
+                    resetSelection();
+                    clearMessage();
+                },
+
                 events: function (fetchInfo, successCallback, failureCallback) {
-                    var courtId = courtFilter.value;
-                    var url = '/Reservations/GetEvents';
-                    if (courtId) {
-                        url += '?courtId=' + courtId;
+                    eventsLoaded = false;
+
+                    const params = new URLSearchParams();
+
+                    if (courtFilter.value) {
+                        params.set('courtId', courtFilter.value);
                     }
+
+                    const url = '@Url.Action("GetEvents", "Reservations")'
+                        + '?' + params.toString();
 
                     fetch(url)
-                        .then(response => response.json())
-                        .then(data => successCallback(data))
-                        .catch(error => failureCallback(error));
+                        .then(function (response) {
+                            if (!response.ok) {
+                                throw new Error('Nie udało się pobrać rezerwacji.');
+                            }
+
+                            return response.json();
+                        })
+                        .then(function (data) {
+                            eventsLoaded = true;
+                            successCallback(data);
+                        })
+                        .catch(function (error) {
+                            eventsLoaded = false;
+                            showMessage(error.message, true);
+                            failureCallback(error);
+                        });
                 },
-                select: function (info) {
-                    var dateStr = info.startStr.split('T')[0];
-                    var startTimeStr = info.startStr.split('T')[1].substring(0, 5);
-                    var endTimeStr = info.endStr.split('T')[1].substring(0, 5);
-                    var selectedCourt = courtFilter.value;
 
-                    var createUrl = '/Reservations/Create' +
-                        '?date=' + dateStr +
-                        '&startTime=' + startTimeStr +
-                        '&endTime=' + endTimeStr;
-
-                    if (selectedCourt) {
-                        createUrl += '&courtId=' + selectedCourt;
+                eventContent: function (arg) {
+                    if (arg.event.extendedProps.temporarySelection) {
+                        return;
                     }
 
-                    window.location.href = createUrl;
+                    const wrapper = document.createElement('div');
+
+                    const time = document.createElement('div');
+                    time.className = 'booking-event-time';
+
+                    const start = arg.event.start
+                        ? formatTime(arg.event.start)
+                        : '';
+
+                    const end = arg.event.end
+                        ? formatTime(arg.event.end)
+                        : '';
+
+                    time.textContent = end
+                        ? start + ' – ' + end
+                        : start;
+
+                    const title = document.createElement('div');
+                    title.className = 'booking-event-title';
+                    title.textContent = arg.event.title;
+
+                    wrapper.appendChild(time);
+                    wrapper.appendChild(title);
+
+                    return { domNodes: [wrapper] };
+                },
+
+                dateClick: function (info) {
+                    clearMessage();
+
+                    if (info.allDay) {
+                        resetSelection();
+                        showMessage(
+                            'Przełącz na widok dnia lub tygodnia, aby wybrać godziny.',
+                            true
+                        );
+                        return;
+                    }
+
+                    if (!courtFilter.value) {
+                        resetSelection();
+                        showMessage('Najpierw wybierz konkretny kort.', true);
+                        return;
+                    }
+
+                    if (!eventsLoaded) {
+                        resetSelection();
+                        showMessage(
+                            'Poczekaj na wczytanie dostępności kortu.',
+                            true
+                        );
+                        return;
+                    }
+
+                    const clickedTime = selectedStart
+                        ? new Date(info.date.getTime() + 30 * 60 * 1000)
+                        : info.date;
+
+                    if (clickedTime < new Date()) {
+                        resetSelection();
+                        showMessage(
+                            'Nie można rezerwować terminów z przeszłości.',
+                            true
+                        );
+                        return;
+                    }
+
+                    if (!selectedStart) {
+                        const slotEnd = new Date(
+                            clickedTime.getTime() + 30 * 60 * 1000
+                        );
+
+                        if (isOccupied(clickedTime, slotEnd)) {
+                            showMessage('Ta godzina jest zajęta.', true);
+                            return;
+                        }
+
+                        selectedStart = clickedTime;
+                        showSelection(clickedTime, slotEnd);
+
+                        showMessage(
+                            'Wybrano początek: ' + formatTime(clickedTime) +
+                            '. Kliknij godzinę zakończenia.'
+                        );
+
+                        return;
+                    }
+
+                    const start = selectedStart;
+
+                    if (clickedTime <= start) {
+                        resetSelection();
+                        showMessage(
+                            'Godzina zakończenia musi być późniejsza. Wybierz ponownie.',
+                            true
+                        );
+                        return;
+                    }
+
+                    if (formatDate(start) !== formatDate(clickedTime)) {
+                        resetSelection();
+                        showMessage(
+                            'Rezerwacja musi kończyć się tego samego dnia.',
+                            true
+                        );
+                        return;
+                    }
+
+                    if (isOccupied(start, clickedTime)) {
+                        resetSelection();
+                        showMessage(
+                            'Wybrany przedział obejmuje zajęty termin.',
+                            true
+                        );
+                        return;
+                    }
+
+                    showSelection(start, clickedTime);
+
+                    const params = new URLSearchParams({
+                        courtId: courtFilter.value,
+                        date: formatDate(start),
+                        startTime: formatTime(start),
+                        endTime: formatTime(clickedTime)
+                    });
+
+                    window.location.href =
+                        '@Url.Action("Create", "Reservations")'
+                        + '?' + params.toString();
+                },
+
+                eventClick: function (info) {
+                    if (info.event.extendedProps.temporarySelection) {
+                        return;
+                    }
+
+                    resetSelection();
+                    showMessage('Ten termin jest już zarezerwowany.', true);
                 }
             });
 
             calendar.render();
 
             courtFilter.addEventListener('change', function () {
+                resetSelection();
+                clearMessage();
                 calendar.refetchEvents();
             });
         });
