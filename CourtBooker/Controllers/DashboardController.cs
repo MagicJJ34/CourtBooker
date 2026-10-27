@@ -17,83 +17,250 @@ public class DashboardController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(
+        int? courtId,
+        string period = "30",
+        DateOnly? from = null,
+        DateOnly? to = null)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
 
-        var model = new DashboardViewModel
+        if (period != "7" && period != "30" &&
+            period != "90" && period != "custom")
         {
-            TotalReservations = await _context.Reservations.CountAsync(),
-
-            TodayReservations = await _context.Reservations.CountAsync(
-                r => r.Date == today &&
-                     r.InternalStatus != "Cancelled"),
-
-            ActiveUsers = await _context.Users.CountAsync(
-                u => u.IsActive),
-
-            TotalCourts = await _context.Courts.CountAsync(),
-
-            CancelledReservations = await _context.Reservations.CountAsync(
-                r => r.InternalStatus == "Cancelled"),
-
-            ReservationsValue = await _context.Reservations
-                .Where(r => r.InternalStatus != "Cancelled")
-                .SumAsync(r => (decimal?)r.TotalPrice) ?? 0
-        };
-
-        var popularCourt = await _context.Reservations
-            .Where(r => r.InternalStatus != "Cancelled")
-            .GroupBy(r => r.CourtId)
-            .Select(g => new
-            {
-                CourtId = g.Key,
-                Count = g.Count()
-            })
-            .OrderByDescending(x => x.Count)
-            .FirstOrDefaultAsync();
-
-        if (popularCourt != null)
-        {
-            model.MostPopularCourt = await _context.Courts
-                .Where(c => c.Id == popularCourt.CourtId)
-                .Select(c => c.Name)
-                .FirstOrDefaultAsync() ?? "Brak danych";
+            period = "30";
         }
 
-        model.RecentReservations = await _context.Reservations
+        var startDate = period switch
+        {
+            "7" => today.AddDays(-6),
+            "90" => today.AddDays(-89),
+            "custom" => from ?? today.AddDays(-29),
+            _ => today.AddDays(-29)
+        };
+
+        var endDate = period == "custom"
+            ? to ?? today
+            : today;
+
+        if (startDate > endDate)
+        {
+            return RedirectToAction(nameof(Index), new
+            {
+                courtId,
+                period = "30"
+            });
+        }
+
+        var courts = await _context.Courts
+            .AsNoTracking()
+            .OrderBy(c => c.Name)
+            .Select(c => new DashboardCourtOption
+            {
+                Id = c.Id,
+                Name = c.Name
+            })
+            .ToListAsync();
+
+        if (courtId.HasValue &&
+            !courts.Any(c => c.Id == courtId.Value))
+        {
+            courtId = null;
+        }
+
+        var query = _context.Reservations
+            .AsNoTracking()
+            .Where(r => r.Date >= startDate &&
+                        r.Date <= endDate);
+
+        if (courtId.HasValue)
+        {
+            query = query.Where(r => r.CourtId == courtId.Value);
+        }
+
+        var reservations = await query
             .Include(r => r.User)
             .Include(r => r.Court)
             .OrderByDescending(r => r.Date)
             .ThenByDescending(r => r.StartTime)
-            .Take(8)
-            .AsNoTracking()
             .ToListAsync();
 
-        var firstMonth = new DateOnly(today.Year, today.Month, 1)
-            .AddMonths(-5);
+        var nonCancelled = reservations
+            .Where(r => r.InternalStatus != "Cancelled")
+            .ToList();
 
-        var monthlyDates = await _context.Reservations
-            .Where(r => r.Date >= firstMonth &&
-                        r.Date <= today &&
-                        r.InternalStatus != "Cancelled")
-            .Select(r => r.Date)
-            .ToListAsync();
+        var totalReservations = reservations.Count;
+        var cancelledReservations = reservations.Count(
+            r => r.InternalStatus == "Cancelled"
+        );
 
-        var culture = new CultureInfo("pl-PL");
+        var reservationsValue = nonCancelled.Sum(
+            r => r.TotalPrice
+        );
 
-        for (int i = 0; i < 6; i++)
+        var model = new DashboardViewModel
         {
-            var month = firstMonth.AddMonths(i);
+            SelectedCourtId = courtId,
+            SelectedPeriod = period,
+            FromDate = startDate,
+            ToDate = endDate,
+            CourtOptions = courts,
 
-            model.Months.Add(new DashboardMonth
+            TotalReservations = totalReservations,
+
+            TodayReservations = nonCancelled.Count(
+                r => r.Date == today
+            ),
+
+            ActiveUsers = await _context.Users.CountAsync(
+                u => u.IsActive
+            ),
+
+            TotalCourts = courts.Count,
+
+            CancelledReservations = cancelledReservations,
+
+            ReservationsValue = reservationsValue,
+
+            ReservedHours = nonCancelled.Sum(
+                r => (decimal)(
+                    r.EndTime.ToTimeSpan() -
+                    r.StartTime.ToTimeSpan()
+                ).TotalHours
+            ),
+
+            CancellationRate = totalReservations > 0
+                ? Math.Round(
+                    cancelledReservations * 100m / totalReservations,
+                    1
+                )
+                : 0m,
+
+            AverageReservationValue = nonCancelled.Count > 0
+                ? Math.Round(
+                    reservationsValue / nonCancelled.Count,
+                    2
+                )
+                : 0m,
+
+            RecentReservations = reservations
+                .Take(8)
+                .ToList()
+        };
+
+        var courtsForRanking = courtId.HasValue
+            ? courts.Where(c => c.Id == courtId.Value).ToList()
+            : courts;
+
+        foreach (var court in courtsForRanking)
+        {
+            var courtReservations = reservations
+                .Where(r => r.CourtId == court.Id)
+                .ToList();
+
+            var validReservations = courtReservations
+                .Where(r => r.InternalStatus != "Cancelled")
+                .ToList();
+
+            model.CourtStatistics.Add(new DashboardCourtStatistic
             {
-                Name = culture.DateTimeFormat
-                    .GetAbbreviatedMonthName(month.Month),
+                Name = court.Name,
 
-                Count = monthlyDates.Count(d =>
-                    d.Year == month.Year &&
-                    d.Month == month.Month)
+                Reservations = validReservations.Count,
+
+                CancelledReservations = courtReservations.Count(
+                    r => r.InternalStatus == "Cancelled"
+                ),
+
+                Hours = validReservations.Sum(
+                    r => (decimal)(
+                        r.EndTime.ToTimeSpan() -
+                        r.StartTime.ToTimeSpan()
+                    ).TotalHours
+                ),
+
+                Value = validReservations.Sum(
+                    r => r.TotalPrice
+                )
+            });
+        }
+
+        model.CourtStatistics = model.CourtStatistics
+            .OrderByDescending(c => c.Reservations)
+            .ThenBy(c => c.Name)
+            .ToList();
+
+        model.MostPopularCourt = model.CourtStatistics
+            .FirstOrDefault(c => c.Reservations > 0)?.Name
+            ?? "Brak danych";
+
+        var culture = CultureInfo.GetCultureInfo("pl-PL");
+        var days = endDate.DayNumber - startDate.DayNumber + 1;
+
+        if (days <= 31)
+        {
+            for (var date = startDate;
+                 date <= endDate;
+                 date = date.AddDays(1))
+            {
+                model.Months.Add(new DashboardMonth
+                {
+                    Name = date.ToString("dd.MM", culture),
+                    Count = nonCancelled.Count(r => r.Date == date)
+                });
+            }
+        }
+        else
+        {
+            var month = new DateOnly(
+                startDate.Year,
+                startDate.Month,
+                1
+            );
+
+            var lastMonth = new DateOnly(
+                endDate.Year,
+                endDate.Month,
+                1
+            );
+
+            while (month <= lastMonth)
+            {
+                var currentMonth = month;
+
+                model.Months.Add(new DashboardMonth
+                {
+                    Name = currentMonth.ToString("MMM yy", culture),
+
+                    Count = nonCancelled.Count(
+                        r => r.Date.Year == currentMonth.Year &&
+                             r.Date.Month == currentMonth.Month
+                    )
+                });
+
+                month = month.AddMonths(1);
+            }
+        }
+
+        for (var hour = 6; hour < 24; hour += 2)
+        {
+            var start = new TimeOnly(hour, 0);
+            var end = hour + 2 == 24
+                ? TimeOnly.MinValue
+                : new TimeOnly(hour + 2, 0);
+
+            var count = nonCancelled.Count(r =>
+                r.StartTime < (hour + 2 == 24
+                    ? TimeOnly.MaxValue
+                    : end)
+                &&
+                r.EndTime > start
+            );
+
+            model.HourStatistics.Add(new DashboardHourStatistic
+            {
+                Name = $"{hour:00}:00–{hour + 2:00}:00",
+                Count = count
             });
         }
 

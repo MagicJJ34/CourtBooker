@@ -1,9 +1,84 @@
 ﻿@model CourtBooker.Models.DashboardViewModel
+@using System.Globalization
 
 @{
     ViewData["Title"] = "Panel administratora";
-    var maxCount = Math.Max(1, Model.Months.Max(m => m.Count));
+
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+
+    var maxCount = Math.Max(
+        1,
+        Model.Months.Any() ? Model.Months.Max(m => m.Count) : 0
+    );
+
+    var maxCourtCount = Math.Max(
+        1,
+        Model.CourtStatistics.Any()
+            ? Model.CourtStatistics.Max(c => c.Reservations)
+            : 0
+    );
+
+    var maxHourCount = Math.Max(
+        1,
+        Model.HourStatistics.Any()
+            ? Model.HourStatistics.Max(h => h.Count)
+            : 0
+    );
 }
+
+<style>
+    .dashboard-filter-card {
+        background: #fff;
+        border: 1px solid #e6eee8;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .04);
+    }
+
+    .dashboard-progress {
+        height: 16px;
+        border-radius: 10px;
+        background: #eaf2ec;
+        overflow: hidden;
+    }
+
+    .dashboard-progress-fill {
+        height: 100%;
+        border-radius: 10px;
+        background: #198754;
+    }
+
+    .dashboard-chart {
+        max-height: 450px;
+        overflow-y: auto;
+    }
+
+    .dashboard-chart-row {
+        display: grid;
+        grid-template-columns: 85px 1fr 35px;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 13px;
+    }
+
+    .dashboard-stat-label {
+        color: #6c757d;
+        font-size: .9rem;
+    }
+
+    .dashboard-metric {
+        border: 1px solid #e6eee8;
+        border-radius: 14px;
+        padding: 18px;
+        height: 100%;
+        background: #f8fbf9;
+    }
+
+    .dashboard-metric-value {
+        font-size: 1.65rem;
+        font-weight: 750;
+        color: #185c3c;
+    }
+</style>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
@@ -19,13 +94,135 @@
     </span>
 </div>
 
+<div class="dashboard-filter-card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-funnel text-success me-2"></i>
+            Filtry statystyk
+        </h5>
+
+        <a asp-controller="Dashboard"
+           asp-action="Index"
+           class="btn btn-sm btn-outline-secondary">
+            Wyczyść filtry
+        </a>
+    </div>
+
+    <form asp-controller="Dashboard"
+          asp-action="Index"
+          method="get"
+          class="row g-3 align-items-end">
+
+        <div class="col-md-4">
+            <label for="courtId" class="form-label fw-semibold">
+                Kort
+            </label>
+
+            <select id="courtId"
+                    name="courtId"
+                    class="form-select">
+                <option value="">Wszystkie korty</option>
+
+                @foreach (var court in Model.CourtOptions)
+                {
+                    if (Model.SelectedCourtId == court.Id)
+                    {
+                        <option value="@court.Id" selected>
+                            @court.Name
+                        </option>
+                    }
+                    else
+                    {
+                        <option value="@court.Id">
+                            @court.Name
+                        </option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="period" class="form-label fw-semibold">
+                Okres
+            </label>
+
+            <select id="period"
+                    name="period"
+                    class="form-select">
+                <option value="7"
+                        selected="@(Model.SelectedPeriod == "7")">
+                    Ostatnie 7 dni
+                </option>
+
+                <option value="30"
+                        selected="@(Model.SelectedPeriod == "30")">
+                    Ostatnie 30 dni
+                </option>
+
+                <option value="90"
+                        selected="@(Model.SelectedPeriod == "90")">
+                    Ostatnie 90 dni
+                </option>
+
+                <option value="custom"
+                        selected="@(Model.SelectedPeriod == "custom")">
+                    Własny zakres
+                </option>
+            </select>
+        </div>
+
+        <div class="col-md-2 custom-date-field">
+            <label for="from" class="form-label fw-semibold">
+                Od
+            </label>
+
+            <input type="date"
+                   id="from"
+                   name="from"
+                   class="form-control"
+                   value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+        </div>
+
+        <div class="col-md-2 custom-date-field">
+            <label for="to" class="form-label fw-semibold">
+                Do
+            </label>
+
+            <input type="date"
+                   id="to"
+                   name="to"
+                   class="form-control"
+                   value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+        </div>
+
+        <div class="col-md-1 d-grid">
+            <button type="submit" class="btn btn-success">
+                Pokaż
+            </button>
+        </div>
+    </form>
+
+    <p class="text-muted small mt-3 mb-0">
+        Statystyki według daty gry:
+        <strong>
+            @Model.FromDate.ToString("dd.MM.yyyy")
+            –
+            @Model.ToDate.ToString("dd.MM.yyyy")
+        </strong>
+    </p>
+</div>
+
 <div class="row g-3 mb-4">
     <div class="col-md-6 col-xl-3">
         <div class="card border-0 shadow-sm rounded-4 h-100">
             <div class="card-body p-4">
                 <i class="bi bi-calendar-check fs-2 text-success"></i>
-                <h2 class="fw-bold mt-3 mb-1">@Model.TotalReservations</h2>
-                <p class="text-muted mb-0">Wszystkie rezerwacje</p>
+                <h2 class="fw-bold mt-3 mb-1">
+                    @Model.TotalReservations
+                </h2>
+                <p class="text-muted mb-0">
+                    Wszystkie rezerwacje w okresie
+                </p>
             </div>
         </div>
     </div>
@@ -34,8 +231,12 @@
         <div class="card border-0 shadow-sm rounded-4 h-100">
             <div class="card-body p-4">
                 <i class="bi bi-people fs-2 text-success"></i>
-                <h2 class="fw-bold mt-3 mb-1">@Model.ActiveUsers</h2>
-                <p class="text-muted mb-0">Aktywni użytkownicy</p>
+                <h2 class="fw-bold mt-3 mb-1">
+                    @Model.ActiveUsers
+                </h2>
+                <p class="text-muted mb-0">
+                    Aktywni użytkownicy
+                </p>
             </div>
         </div>
     </div>
@@ -44,8 +245,12 @@
         <div class="card border-0 shadow-sm rounded-4 h-100">
             <div class="card-body p-4">
                 <i class="bi bi-calendar-day fs-2 text-success"></i>
-                <h2 class="fw-bold mt-3 mb-1">@Model.TodayReservations</h2>
-                <p class="text-muted mb-0">Rezerwacje na dziś</p>
+                <h2 class="fw-bold mt-3 mb-1">
+                    @Model.TodayReservations
+                </h2>
+                <p class="text-muted mb-0">
+                    Rezerwacje na dziś
+                </p>
             </div>
         </div>
     </div>
@@ -55,9 +260,64 @@
             <div class="card-body p-4">
                 <i class="bi bi-cash-stack fs-2 text-success"></i>
                 <h2 class="fw-bold mt-3 mb-1">
-                    @Model.ReservationsValue.ToString("N2") zł
+                    @Model.ReservationsValue.ToString("N2", culture) zł
                 </h2>
-                <p class="text-muted mb-0">Wartość rezerwacji bez anulowanych</p>
+                <p class="text-muted mb-0">
+                    Wartość rezerwacji bez anulowanych
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">
+            <i class="bi bi-graph-up-arrow text-success me-2"></i>
+            Wskaźniki rezerwacji
+        </h5>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="dashboard-metric">
+                    <p class="dashboard-stat-label mb-2">
+                        Wskaźnik anulowań
+                    </p>
+                    <div class="dashboard-metric-value">
+                        @Model.CancellationRate.ToString("N1", culture)%
+                    </div>
+                    <p class="small text-muted mb-0 mt-2">
+                        Udział anulowanych we wszystkich rezerwacjach
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="dashboard-metric">
+                    <p class="dashboard-stat-label mb-2">
+                        Średnia wartość rezerwacji
+                    </p>
+                    <div class="dashboard-metric-value">
+                        @Model.AverageReservationValue.ToString("N2", culture) zł
+                    </div>
+                    <p class="small text-muted mb-0 mt-2">
+                        Średnia dla nieanulowanych rezerwacji
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="dashboard-metric">
+                    <p class="dashboard-stat-label mb-2">
+                        Zarezerwowane godziny
+                    </p>
+                    <div class="dashboard-metric-value">
+                        @Model.ReservedHours.ToString("N1", culture) godz.
+                    </div>
+                    <p class="small text-muted mb-0 mt-2">
+                        Łączny czas nieanulowanych rezerwacji
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -69,40 +329,35 @@
             <div class="card-body p-4">
                 <h5 class="fw-bold mb-1">
                     <i class="bi bi-bar-chart text-success me-2"></i>
-                    Rezerwacje w ostatnich 6 miesiącach
+                    Rezerwacje w wybranym okresie
                 </h5>
+
                 <p class="text-muted small mb-4">
                     Liczba nieanulowanych rezerwacji według daty gry
                 </p>
 
-                @foreach (var month in Model.Months)
-                {
-                    var percent = (int)Math.Round(
-                    month.Count * 100.0 / maxCount);
+                <div class="dashboard-chart">
+                    @foreach (var month in Model.Months)
+                    {
+                        var percent = month.Count * 100.0 / maxCount;
 
-                    <div class="row align-items-center mb-3">
-                        <div class="col-2 col-sm-2">
+                        <div class="dashboard-chart-row">
                             <span class="small fw-semibold text-capitalize">
                                 @month.Name
                             </span>
-                        </div>
-                        <div class="col-8 col-sm-9">
-                            <div class="progress"
-                                 style="height:20px;background-color:#e9ecef">
-                                <div class="progress-bar bg-success"
-                                     role="progressbar"
-                                     style="width:@(percent)%"
-                                     aria-valuenow="@month.Count"
-                                     aria-valuemin="0"
-                                     aria-valuemax="@maxCount">
+
+                            <div class="dashboard-progress">
+                                <div class="dashboard-progress-fill"
+                                     style="width:@(percent.ToString("0.##", CultureInfo.InvariantCulture))%">
                                 </div>
                             </div>
+
+                            <strong class="small text-end">
+                                @month.Count
+                            </strong>
                         </div>
-                        <div class="col-2 col-sm-1 text-end">
-                            <strong>@month.Count</strong>
-                        </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -115,20 +370,176 @@
                     Statystyki kortów
                 </h5>
 
-                <p class="text-muted small mb-1">Najpopularniejszy kort</p>
-                <h4 class="fw-bold mb-4">@Model.MostPopularCourt</h4>
+                <p class="text-muted small mb-1">
+                    Najpopularniejszy kort
+                </p>
+                <h4 class="fw-bold mb-4">
+                    @Model.MostPopularCourt
+                </h4>
 
                 <hr />
 
-                <p class="text-muted small mb-1">Liczba kortów</p>
-                <h4 class="fw-bold mb-4">@Model.TotalCourts</h4>
+                <p class="text-muted small mb-1">
+                    Liczba kortów
+                </p>
+                <h4 class="fw-bold mb-4">
+                    @Model.TotalCourts
+                </h4>
 
                 <hr />
 
-                <p class="text-muted small mb-1">Anulowane rezerwacje</p>
-                <h4 class="fw-bold mb-0">@Model.CancelledReservations</h4>
+                <p class="text-muted small mb-1">
+                    Anulowane rezerwacje w okresie
+                </p>
+                <h4 class="fw-bold mb-4">
+                    @Model.CancelledReservations
+                </h4>
+
+                <hr />
+
+                <p class="text-muted small mb-1">
+                    Nieanulowane rezerwacje w okresie
+                </p>
+                <h4 class="fw-bold mb-0">
+                    @(Model.TotalReservations - Model.CancelledReservations)
+                </h4>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-1">
+            <i class="bi bi-clock text-success me-2"></i>
+            Najpopularniejsze godziny gry
+        </h5>
+
+        <p class="text-muted small mb-4">
+            Liczba nieanulowanych rezerwacji obejmujących
+            poszczególne przedziały godzinowe.
+            Rezerwacja może występować w więcej niż jednym przedziale.
+        </p>
+
+        @if (Model.HourStatistics.Any(h => h.Count > 0))
+        {
+            @foreach (var hour in Model.HourStatistics)
+            {
+                var percent = hour.Count * 100.0 / maxHourCount;
+
+                <div class="dashboard-chart-row">
+                    <span class="small fw-semibold">
+                        @hour.Name
+                    </span>
+
+                    <div class="dashboard-progress">
+                        <div class="dashboard-progress-fill"
+                             style="width:@(percent.ToString("0.##", CultureInfo.InvariantCulture))%">
+                        </div>
+                    </div>
+
+                    <strong class="small text-end">
+                        @hour.Count
+                    </strong>
+                </div>
+            }
+
+            var mostPopularHour = Model.HourStatistics
+            .OrderByDescending(h => h.Count)
+            .First();
+
+            <div class="mt-3 pt-3 border-top">
+                <span class="text-muted small">
+                    Najpopularniejszy przedział:
+                </span>
+
+                <strong class="text-success ms-1">
+                    @mostPopularHour.Name
+                </strong>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted mb-0">
+                Brak rezerwacji w wybranym okresie.
+            </p>
+        }
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-1">
+            <i class="bi bi-trophy text-success me-2"></i>
+            Ranking kortów
+        </h5>
+
+        <p class="text-muted small mb-3">
+            Porównanie liczby rezerwacji, godzin i wartości
+            dla wybranego okresu.
+        </p>
+
+        @if (Model.CourtStatistics.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Kort</th>
+                            <th>Popularność</th>
+                            <th class="text-end">Rezerwacje</th>
+                            <th class="text-end">Anulowane</th>
+                            <th class="text-end">Godziny</th>
+                            <th class="text-end">Wartość</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var court in Model.CourtStatistics)
+                        {
+                            var percent =
+                            court.Reservations * 100.0 / maxCourtCount;
+
+                            <tr>
+                                <td class="fw-semibold">
+                                    @court.Name
+                                </td>
+
+                                <td style="min-width:140px">
+                                    <div class="dashboard-progress">
+                                        <div class="dashboard-progress-fill"
+                                             style="width:@(percent.ToString("0.##", CultureInfo.InvariantCulture))%">
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="text-end">
+                                    @court.Reservations
+                                </td>
+
+                                <td class="text-end">
+                                    @court.CancelledReservations
+                                </td>
+
+                                <td class="text-end">
+                                    @court.Hours.ToString("N1", culture)
+                                </td>
+
+                                <td class="text-end">
+                                    @court.Value.ToString("N2", culture) zł
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted mb-0">
+                Brak kortów do wyświetlenia.
+            </p>
+        }
     </div>
 </div>
 
@@ -140,7 +551,8 @@
                 Ostatnie terminy rezerwacji
             </h5>
 
-            <a asp-controller="Reservations" asp-action="Index"
+            <a asp-controller="Reservations"
+               asp-action="Index"
                class="btn btn-sm btn-outline-success">
                 Wszystkie rezerwacje
             </a>
@@ -158,38 +570,58 @@
                         <th class="text-end">Kwota</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     @foreach (var reservation in Model.RecentReservations)
                     {
                         <tr>
-                            <td>@(reservation.User?.Name ?? "Brak danych")</td>
-                            <td>@(reservation.Court?.Name ?? "Brak danych")</td>
-                            <td>@reservation.Date.ToString("dd.MM.yyyy")</td>
+                            <td>
+                                @(reservation.User?.Name ?? "Brak danych")
+                            </td>
+
+                            <td>
+                                @(reservation.Court?.Name ?? "Brak danych")
+                            </td>
+
+                            <td>
+                                @reservation.Date.ToString("dd.MM.yyyy")
+                            </td>
+
                             <td>
                                 @reservation.StartTime.ToString("HH:mm")
-                                -
+                                –
                                 @reservation.EndTime.ToString("HH:mm")
                             </td>
+
                             <td>
                                 @if (reservation.Status == "Cancelled")
                                 {
-                                    <span class="badge bg-danger">Anulowana</span>
+                                    <span class="badge bg-danger">
+                                        Anulowana
+                                    </span>
                                 }
                                 else if (reservation.Status == "Completed")
                                 {
-                                    <span class="badge bg-secondary">Zakończona</span>
+                                    <span class="badge bg-secondary">
+                                        Zakończona
+                                    </span>
                                 }
                                 else if (reservation.Status == "In Progress")
                                 {
-                                    <span class="badge bg-info text-dark">W trakcie</span>
+                                    <span class="badge bg-info text-dark">
+                                        W trakcie
+                                    </span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-success">Oczekująca</span>
+                                    <span class="badge bg-success">
+                                        Oczekująca
+                                    </span>
                                 }
                             </td>
+
                             <td class="text-end">
-                                @reservation.TotalPrice.ToString("N2") zł
+                                @reservation.TotalPrice.ToString("N2", culture) zł
                             </td>
                         </tr>
                     }
@@ -200,30 +632,61 @@
         @if (!Model.RecentReservations.Any())
         {
             <p class="text-muted text-center mb-0">
-                Brak rezerwacji do wyświetlenia.
+                Brak rezerwacji w wybranym okresie.
             </p>
         }
     </div>
 </div>
 
 <div class="d-flex flex-wrap gap-2">
-    <a asp-controller="Reservations" asp-action="Index"
+    <a asp-controller="Reservations"
+       asp-action="Index"
        class="btn btn-emerald text-white">
-        <i class="bi bi-calendar-check me-1"></i> Rezerwacje
+        <i class="bi bi-calendar-check me-1"></i>
+        Rezerwacje
     </a>
 
-    <a asp-controller="Users" asp-action="Index"
+    <a asp-controller="Users"
+       asp-action="Index"
        class="btn btn-outline-success">
-        <i class="bi bi-people me-1"></i> Użytkownicy
+        <i class="bi bi-people me-1"></i>
+        Użytkownicy
     </a>
 
-    <a asp-controller="Courts" asp-action="Index"
+    <a asp-controller="Courts"
+       asp-action="Index"
        class="btn btn-outline-success">
-        <i class="bi bi-grid me-1"></i> Korty
+        <i class="bi bi-grid me-1"></i>
+        Korty
     </a>
 
-    <a asp-controller="Reports" asp-action="Index"
+    <a asp-controller="Reports"
+       asp-action="Index"
        class="btn btn-outline-success">
-        <i class="bi bi-file-earmark-bar-graph me-1"></i> Raporty
+        <i class="bi bi-file-earmark-bar-graph me-1"></i>
+        Raporty
     </a>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const period = document.getElementById('period');
+            const fields = document.querySelectorAll('.custom-date-field');
+
+            function updateDateFields() {
+                const custom = period.value === 'custom';
+
+                fields.forEach(function (field) {
+                    field.style.display = custom ? '' : 'none';
+
+                    const input = field.querySelector('input');
+                    input.disabled = !custom;
+                });
+            }
+
+            period.addEventListener('change', updateDateFields);
+            updateDateFields();
+        });
+    </script>
+}
