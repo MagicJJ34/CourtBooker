@@ -4,22 +4,29 @@
     ViewData["Title"] = "Edycja użytkownika";
 }
 
-<div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width:650px">
+<div class="card border-0 shadow-sm rounded-4 mx-auto"
+     style="max-width:650px">
+
     <div class="card-body p-4">
         <h3 class="fw-bold mb-4">
             <i class="bi bi-person-gear text-success"></i>
             Edycja użytkownika
         </h3>
 
-        <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+        <form asp-action="Edit"
+              asp-route-id="@Model.Id"
+              method="post">
+
             <input type="hidden" asp-for="Id" />
 
-            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <div asp-validation-summary="All"
+                 class="text-danger mb-3"></div>
 
             <div class="mb-3">
                 <label asp-for="Name" class="form-label">
                     Imię i nazwisko
                 </label>
+
                 <input asp-for="Name" class="form-control" />
             </div>
 
@@ -27,29 +34,123 @@
                 <label asp-for="Email" class="form-label">
                     Adres e-mail
                 </label>
-                <input asp-for="Email" type="email" class="form-control" />
+
+                <input asp-for="Email"
+                       type="email"
+                       class="form-control" />
             </div>
 
             <div class="mb-4">
-                <label asp-for="Role" class="form-label">Rola</label>
+                <label asp-for="Role" class="form-label">
+                    Rola
+                </label>
+
                 <select asp-for="Role" class="form-select">
                     <option value="User">Użytkownik</option>
                     <option value="Admin">Administrator</option>
                 </select>
             </div>
 
-            <div class="alert alert-light border">
-                <i class="bi bi-shield-lock text-success"></i>
-                Hasło użytkownika jest chronione i nie może być
-                wyświetlone ani zmienione w tym formularzu.
+            <hr class="my-4" />
+
+            <h5 class="fw-bold mb-2">
+                <i class="bi bi-shield-lock text-success me-2"></i>
+                Zmiana hasła
+            </h5>
+
+            <p class="text-muted small mb-3">
+                Możesz ustawić nowe hasło użytkownika.
+                Pozostaw oba pola puste, jeżeli nie chcesz
+                zmieniać obecnego hasła.
+            </p>
+
+            <div class="mb-3">
+                <label asp-for="NewPassword"
+                       class="form-label">
+                    Nowe hasło
+                </label>
+
+                <div class="input-group">
+                    <input asp-for="NewPassword"
+                           type="password"
+                           class="form-control"
+                           id="newPassword"
+                           autocomplete="new-password"
+                           placeholder="Minimum 8 znaków" />
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            onclick="togglePassword('newPassword', this)"
+                            aria-label="Pokaż lub ukryj nowe hasło">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+
+                <span asp-validation-for="NewPassword"
+                      class="text-danger small"></span>
             </div>
 
-            <button type="submit" class="btn btn-emerald text-white">
+            <div class="mb-4">
+                <label asp-for="ConfirmPassword"
+                       class="form-label">
+                    Potwierdź nowe hasło
+                </label>
+
+                <div class="input-group">
+                    <input asp-for="ConfirmPassword"
+                           type="password"
+                           class="form-control"
+                           id="confirmPassword"
+                           autocomplete="new-password"
+                           placeholder="Powtórz nowe hasło" />
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            onclick="togglePassword('confirmPassword', this)"
+                            aria-label="Pokaż lub ukryj potwierdzenie hasła">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+
+                <span asp-validation-for="ConfirmPassword"
+                      class="text-danger small"></span>
+            </div>
+
+            <div class="alert alert-light border small">
+                <i class="bi bi-info-circle text-success me-1"></i>
+                Nowe hasło zostanie zapisane w postaci
+                bezpiecznego hasha. Nie będzie możliwe
+                jego późniejsze odczytanie.
+            </div>
+
+            <button type="submit"
+                    class="btn btn-emerald text-white">
+                <i class="bi bi-check-lg me-1"></i>
                 Zapisz zmiany
             </button>
-            <a asp-action="Index" class="btn btn-secondary">
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
                 Anuluj
             </a>
         </form>
     </div>
 </div>
+
+@section Scripts {
+
+    <script>
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+    </script>
+}

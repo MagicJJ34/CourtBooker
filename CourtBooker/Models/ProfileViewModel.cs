@@ -1,5 +1,4 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CourtBooker.Models;
 
@@ -16,7 +15,7 @@ public class ProfileViewModel
     public string CurrentPassword { get; set; } = "";
 
     [DataType(DataType.Password)]
-    [MinLength(6, ErrorMessage = "Hasło musi mieć minimum 6 znaków.")]
+    [PasswordPolicy]
     public string? NewPassword { get; set; }
 
     [DataType(DataType.Password)]

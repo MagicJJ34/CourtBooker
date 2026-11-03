@@ -103,22 +103,64 @@ public class UsersController : Controller
             model.Email = model.Email.Trim();
 
             if (model.Role != "User" && model.Role != "Admin")
-                ModelState.AddModelError("Role", "Nieprawidłowa rola.");
+            {
+                ModelState.AddModelError(
+                    "Role",
+                    "Nieprawidłowa rola."
+                );
+            }
 
             bool exists = await _context.Users.AnyAsync(u =>
                 u.Id != id &&
                 u.Email.ToLower() == model.Email.ToLower());
 
             if (exists)
-                ModelState.AddModelError("Email", "Ten e-mail jest już zajęty.");
+            {
+                ModelState.AddModelError(
+                    "Email",
+                    "Ten e-mail jest już zajęty."
+                );
+            }
 
             string? currentId =
                 User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (user.Id.ToString() == currentId && model.Role != "Admin")
+            if (user.Id.ToString() == currentId &&
+                model.Role != "Admin")
             {
                 ModelState.AddModelError(
-                    "Role", "Nie możesz odebrać sobie uprawnień administratora.");
+                    "Role",
+                    "Nie możesz odebrać sobie uprawnień administratora."
+                );
+            }
+
+            bool changePassword =
+                !string.IsNullOrWhiteSpace(model.NewPassword);
+
+            if (changePassword)
+            {
+                if (model.NewPassword!.Length < 8)
+                {
+                    ModelState.AddModelError(
+                        "NewPassword",
+                        "Hasło musi mieć co najmniej 8 znaków."
+                    );
+                }
+
+                if (model.NewPassword != model.ConfirmPassword)
+                {
+                    ModelState.AddModelError(
+                        "ConfirmPassword",
+                        "Hasła nie są zgodne."
+                    );
+                }
+            }
+            else if (!string.IsNullOrEmpty(model.ConfirmPassword))
+            {
+                ModelState.AddModelError(
+                    "NewPassword",
+                    "Podaj nowe hasło albo pozostaw oba pola puste."
+                );
             }
         }
 
@@ -129,9 +171,19 @@ public class UsersController : Controller
         user.Email = model.Email;
         user.Role = model.Role;
 
+        if (!string.IsNullOrWhiteSpace(model.NewPassword))
+        {
+            user.PasswordHash = _hasher.HashPassword(
+                user,
+                model.NewPassword
+            );
+        }
+
         await _context.SaveChangesAsync();
 
-        TempData["Success"] = "Dane użytkownika zostały zapisane.";
+        TempData["Success"] =
+            "Dane użytkownika zostały zapisane.";
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -149,7 +201,9 @@ public class UsersController : Controller
 
         if (user.Id.ToString() == currentId)
         {
-            TempData["Error"] = "Nie możesz dezaktywować własnego konta.";
+            TempData["Error"] =
+                "Nie możesz dezaktywować własnego konta.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -174,7 +228,9 @@ public class UsersController : Controller
         if (user.Id.ToString() ==
             User.FindFirstValue(ClaimTypes.NameIdentifier))
         {
-            TempData["Error"] = "Nie możesz usunąć własnego konta.";
+            TempData["Error"] =
+                "Nie możesz usunąć własnego konta.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -194,7 +250,9 @@ public class UsersController : Controller
         if (user.Id.ToString() ==
             User.FindFirstValue(ClaimTypes.NameIdentifier))
         {
-            TempData["Error"] = "Nie możesz usunąć własnego konta.";
+            TempData["Error"] =
+                "Nie możesz usunąć własnego konta.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -205,6 +263,7 @@ public class UsersController : Controller
         {
             TempData["Error"] =
                 "Ten użytkownik ma historię rezerwacji. Zamiast usuwać konto, możesz je dezaktywować.";
+
             return RedirectToAction(nameof(Index));
         }
 

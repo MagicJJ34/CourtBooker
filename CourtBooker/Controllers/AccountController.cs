@@ -40,7 +40,10 @@ public class AccountController : Controller
 
         if (user == null || !VerifyPassword(user, model.Password))
         {
-            ModelState.AddModelError("", "Nieprawidłowy email lub hasło.");
+            ModelState.AddModelError(
+                "",
+                "Nieprawidłowy e-mail lub hasło.");
+
             return View(model);
         }
 
@@ -53,13 +56,8 @@ public class AccountController : Controller
             return View(model);
         }
 
-        if (!user.PasswordHash.StartsWith("AQAAAA"))
-        {
-            user.PasswordHash = _hasher.HashPassword(user, model.Password);
-            await _context.SaveChangesAsync();
-        }
-
         await SignIn(user);
+
         return RedirectToAction("Index", "Home");
     }
 
@@ -78,9 +76,13 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+        if (await _context.Users.AnyAsync(
+            u => u.Email == model.Email))
         {
-            ModelState.AddModelError("Email", "Ten adres e-mail jest już zajęty.");
+            ModelState.AddModelError(
+                "Email",
+                "Ten adres e-mail jest już zajęty.");
+
             return View(model);
         }
 
@@ -92,10 +94,16 @@ public class AccountController : Controller
             IsActive = true
         };
 
-        user.PasswordHash = _hasher.HashPassword(user, model.Password);
+        user.PasswordHash = _hasher.HashPassword(
+            user,
+            model.Password);
 
         _context.Users.Add(user);
+
         await _context.SaveChangesAsync();
+
+        TempData["RegistrationSuccess"] =
+            "Konto zostało utworzone pomyślnie. Możesz się teraz zalogować.";
 
         return RedirectToAction(nameof(Login));
     }
@@ -103,8 +111,11 @@ public class AccountController : Controller
     [Authorize]
     public async Task<IActionResult> Profile()
     {
-        int id = int.Parse(
-            User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var claim = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(claim, out int id))
+            return Challenge();
 
         var user = await _context.Users.FindAsync(id);
 
@@ -123,8 +134,11 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Profile(ProfileViewModel model)
     {
-        int id = int.Parse(
-            User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var claim = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(claim, out int id))
+            return Challenge();
 
         var user = await _context.Users.FindAsync(id);
 
@@ -168,27 +182,44 @@ public class AccountController : Controller
         if (changePassword)
         {
             user.PasswordHash = _hasher.HashPassword(
-                user, model.NewPassword!);
+                user,
+                model.NewPassword!);
         }
 
         await _context.SaveChangesAsync();
+
         await SignIn(user);
 
         TempData["Success"] = "Dane konta zostały zapisane.";
+
         return RedirectToAction(nameof(Profile));
     }
 
-    private bool VerifyPassword(User user, string password)
+    private bool VerifyPassword(User user, string? password)
     {
-        if (user.PasswordHash.StartsWith("AQAAAA"))
+        if (string.IsNullOrWhiteSpace(user.PasswordHash) ||
+            string.IsNullOrEmpty(password))
         {
-            return _hasher.VerifyHashedPassword(
-                user,
-                user.PasswordHash,
-                password) != PasswordVerificationResult.Failed;
+            return false;
         }
 
-        return user.PasswordHash == password;
+        try
+        {
+            var result = _hasher.VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                password);
+
+            return result != PasswordVerificationResult.Failed;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 
     private async Task SignIn(User user)

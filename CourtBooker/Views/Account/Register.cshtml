@@ -4,60 +4,109 @@
     ViewData["Title"] = "Rejestracja";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="card-title text-center mb-4">Rejestracja Konta</h3>
+<div class="row justify-content-center align-items-center my-5">
+    <div class="col-md-5 col-lg-5">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header bg-dark-emerald text-white text-center py-4 border-0">
+                <i class="bi bi-person-plus fs-1 text-emerald"></i>
+                <h4 class="fw-bold mt-2 mb-0">Utwórz konto</h4>
+                <p class="text-white-50 small mb-0">
+                    Dołącz do CourtBooker i rezerwuj korty online
+                </p>
+            </div>
 
+            <div class="card-body p-4 bg-white">
                 <form asp-action="Register" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <div asp-validation-summary="ModelOnly"
+                         class="text-danger small mb-3"></div>
 
-                    <div class="form-group mb-3">
-                        <label class="form-label">Imię i Nazwisko</label>
-                        <input asp-for="Name" class="form-control" />
-                        <span asp-validation-for="Name" class="text-danger"></span>
+                    <div class="mb-3">
+                        <label asp-for="Name"
+                               class="form-label small fw-bold text-secondary">
+                            Imię i nazwisko
+                        </label>
+                        <input asp-for="Name"
+                               class="form-control bg-light"
+                               placeholder="Jan Kowalski"
+                               autocomplete="name" />
+                        <span asp-validation-for="Name"
+                              class="text-danger small"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label class="form-label">Adres Email</label>
-                        <input asp-for="Email" class="form-control" type="email" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
+                    <div class="mb-3">
+                        <label asp-for="Email"
+                               class="form-label small fw-bold text-secondary">
+                            Adres e-mail
+                        </label>
+                        <input asp-for="Email"
+                               class="form-control bg-light"
+                               type="email"
+                               placeholder="nazwa@example.com"
+                               autocomplete="email" />
+                        <span asp-validation-for="Email"
+                              class="text-danger small"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label class="form-label">Hasło</label>
+                    <div class="mb-3">
+                        <label asp-for="Password"
+                               class="form-label small fw-bold text-secondary">
+                            Hasło
+                        </label>
                         <div class="input-group">
-                            <input asp-for="Password" class="form-control" type="password" />
-                            <button type="button" class="btn btn-outline-secondary"
+                            <input asp-for="Password"
+                                   class="form-control bg-light"
+                                   type="password"
+                                   autocomplete="new-password" />
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
                                     aria-label="Pokaż hasło"
                                     onclick="togglePassword('Password', this)">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
-                        <span asp-validation-for="Password" class="text-danger"></span>
+                        <span asp-validation-for="Password"
+                              class="text-danger small"></span>
+                        <div class="form-text small">
+                            Minimum 10 znaków, wielka i mała litera,
+                            cyfra oraz znak specjalny.
+                        </div>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label class="form-label">Potwierdź Hasło</label>
+                    <div class="mb-4">
+                        <label asp-for="ConfirmPassword"
+                               class="form-label small fw-bold text-secondary">
+                            Potwierdź hasło
+                        </label>
                         <div class="input-group">
-                            <input asp-for="ConfirmPassword" class="form-control" type="password" />
-                            <button type="button" class="btn btn-outline-secondary"
+                            <input asp-for="ConfirmPassword"
+                                   class="form-control bg-light"
+                                   type="password"
+                                   autocomplete="new-password" />
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
                                     aria-label="Pokaż hasło"
                                     onclick="togglePassword('ConfirmPassword', this)">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
-                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        <span asp-validation-for="ConfirmPassword"
+                              class="text-danger small"></span>
                     </div>
 
-                    <button type="submit" class="btn btn-success w-100 mb-2">
+                    <button type="submit"
+                            class="btn btn-emerald text-white w-100 py-2 rounded-pill fw-semibold shadow-sm">
+                        <i class="bi bi-person-check me-1"></i>
                         Zarejestruj się
                     </button>
-                    <a asp-action="Login" class="btn btn-link w-100 text-center">
-                        Masz już konto? Zaloguj się
-                    </a>
                 </form>
+            </div>
+
+            <div class="card-footer bg-light text-center py-3 border-0">
+                <span class="small text-muted">Masz już konto?</span>
+                <a asp-action="Login"
+                   class="small fw-bold text-emerald text-decoration-none ms-1">
+                    Zaloguj się
+                </a>
             </div>
         </div>
     </div>

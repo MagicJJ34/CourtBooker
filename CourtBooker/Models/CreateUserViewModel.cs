@@ -12,10 +12,12 @@ public class CreateUserViewModel
     public string Email { get; set; } = "";
 
     [Required(ErrorMessage = "Podaj hasło.")]
-    [MinLength(6, ErrorMessage = "Hasło musi mieć minimum 6 znaków.")]
+    [DataType(DataType.Password)]
+    [PasswordPolicy]
     public string Password { get; set; } = "";
 
     [Required(ErrorMessage = "Potwierdź hasło.")]
+    [DataType(DataType.Password)]
     [Compare("Password", ErrorMessage = "Hasła nie są zgodne.")]
     public string ConfirmPassword { get; set; } = "";
 }

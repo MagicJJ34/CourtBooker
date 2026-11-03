@@ -15,4 +15,12 @@ public class EditUserViewModel
 
     [Required(ErrorMessage = "Wybierz rolę.")]
     public string Role { get; set; } = "User";
+
+    [DataType(DataType.Password)]
+    [PasswordPolicy]
+    public string? NewPassword { get; set; }
+
+    [DataType(DataType.Password)]
+    [Compare("NewPassword", ErrorMessage = "Hasła nie są zgodne.")]
+    public string? ConfirmPassword { get; set; }
 }

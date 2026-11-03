@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace CourtBooker.Controllers;
 
@@ -90,7 +91,21 @@ public class ReservationsController : Controller
             reservation.InternalStatus = "Pending";
             reservation.TotalPrice = reservation.CalculatePrice(court!.PricePerHour);
             _context.Reservations.Add(reservation);
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsReservationConflict(ex))
+            {
+                _context.Entry(reservation).State = EntityState.Detached;
+                ModelState.AddModelError(
+                    "",
+                    "Kort jest już zajęty w tym terminie. Wybierz inne godziny.");
+
+                await LoadLists(reservation.CourtId, reservation.UserId);
+                return View(reservation);
+            }
 
             TempData["Success"] = "Rezerwacja została utworzona.";
             return RedirectToAction(nameof(Index));
@@ -168,7 +183,20 @@ public class ReservationsController : Controller
             reservation.EndTime = model.EndTime;
             reservation.TotalPrice = model.CalculatePrice(court!.PricePerHour);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsReservationConflict(ex))
+            {
+                await _context.Entry(reservation).ReloadAsync();
+                ModelState.AddModelError(
+                    "",
+                    "Kort jest już zajęty w tym terminie. Wybierz inne godziny.");
+
+                await LoadLists(model.CourtId, model.UserId);
+                return View(model);
+            }
 
             TempData["Success"] = "Rezerwacja została zaktualizowana.";
             return RedirectToAction(nameof(Index));
@@ -248,13 +276,19 @@ public class ReservationsController : Controller
             return new
             {
                 id = r.Id,
-                title = title,
+                title,
                 start = $"{r.Date:yyyy-MM-dd}T{r.StartTime:HH\\:mm\\:ss}",
                 end = $"{r.Date:yyyy-MM-dd}T{r.EndTime:HH\\:mm\\:ss}",
                 color = isOwner ? "#198754" : "#dc3545",
                 courtId = r.CourtId
             };
         }));
+    }
+
+    private static bool IsReservationConflict(DbUpdateException exception)
+    {
+        return exception.InnerException is PostgresException postgresException &&
+               postgresException.SqlState == PostgresErrorCodes.ExclusionViolation;
     }
 
     private bool CanAccess(Reservation reservation)
@@ -273,7 +307,9 @@ public class ReservationsController : Controller
             reservation.Date.ToDateTime(reservation.StartTime) > DateTime.Now;
     }
 
-    private async Task ValidateReservation(Reservation reservation, int? excludeId = null)
+    private async Task ValidateReservation(
+        Reservation reservation,
+        int? excludeId = null)
     {
         if (reservation.Date == default ||
             reservation.StartTime == default ||
@@ -290,6 +326,7 @@ public class ReservationsController : Controller
             r.CourtId == reservation.CourtId &&
             r.Date == reservation.Date &&
             r.InternalStatus != "Cancelled" &&
+            r.InternalStatus != "Anulowano" &&
             reservation.StartTime < r.EndTime &&
             reservation.EndTime > r.StartTime);
 
