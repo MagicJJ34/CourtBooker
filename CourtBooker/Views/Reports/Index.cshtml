@@ -2,63 +2,133 @@
 
 @{
     ViewData["Title"] = "Raporty";
+
+    DateOnly? dateFrom = ViewBag.From is DateOnly fromValue
+        ? fromValue
+        : null;
+
+    DateOnly? dateTo = ViewBag.To is DateOnly toValue
+        ? toValue
+        : null;
+
+    string from = dateFrom?.ToString("yyyy-MM-dd") ?? "";
+    string to = dateTo?.ToString("yyyy-MM-dd") ?? "";
 }
 
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body p-4">
+
         <h3 class="fw-bold mb-4">
             <i class="bi bi-bar-chart text-success"></i>
             Raporty rezerwacji
         </h3>
 
-        <form asp-action="Index" method="get" class="row g-3 mb-4">
+        <form asp-controller="Reports"
+              asp-action="Index"
+              method="get"
+              class="row g-3 mb-4">
+
             <div class="col-md-4">
-                <label class="form-label">Data od</label>
-                <input type="date" name="from" class="form-control"
-                       value="@ViewBag.From" />
+                <label for="from" class="form-label">
+                    Data od
+                </label>
+
+                <input type="date"
+                       id="from"
+                       name="from"
+                       class="form-control"
+                       value="@from" />
             </div>
+
             <div class="col-md-4">
-                <label class="form-label">Data do</label>
-                <input type="date" name="to" class="form-control"
-                       value="@ViewBag.To" />
+                <label for="to" class="form-label">
+                    Data do
+                </label>
+
+                <input type="date"
+                       id="to"
+                       name="to"
+                       class="form-control"
+                       value="@to" />
             </div>
+
             <div class="col-md-4 d-flex align-items-end">
-                <button class="btn btn-emerald text-white w-100">
+                <button type="submit"
+                        class="btn btn-emerald text-white w-100">
+                    <i class="bi bi-search"></i>
                     Generuj raport
                 </button>
             </div>
         </form>
 
         <div class="row g-3 mb-4">
+
             <div class="col-md-4">
-                <div class="bg-light rounded-3 p-3">
-                    <div class="text-muted">Wszystkie rezerwacje</div>
-                    <h3>@ViewBag.Count</h3>
+                <div class="bg-light rounded-3 p-3 h-100">
+                    <div class="text-muted">
+                        Wszystkie rezerwacje
+                    </div>
+                    <h3 class="mb-0">@ViewBag.Count</h3>
                 </div>
             </div>
+
             <div class="col-md-4">
-                <div class="bg-light rounded-3 p-3">
-                    <div class="text-muted">Anulowane</div>
-                    <h3>@ViewBag.Cancelled</h3>
+                <div class="bg-light rounded-3 p-3 h-100">
+                    <div class="text-muted">
+                        Anulowane
+                    </div>
+                    <h3 class="mb-0">@ViewBag.Cancelled</h3>
                 </div>
             </div>
+
             <div class="col-md-4">
-                <div class="bg-light rounded-3 p-3">
-                    <div class="text-muted">Wartość rezerwacji aktywnych</div>
-                    <h3>@(((decimal)ViewBag.Revenue).ToString("N2")) zł</h3>
+                <div class="bg-light rounded-3 p-3 h-100">
+                    <div class="text-muted">
+                        Wartość rezerwacji aktywnych
+                    </div>
+                    <h3 class="mb-0">
+                        @(((decimal)ViewBag.Revenue).ToString("N2")) zł
+                    </h3>
                 </div>
             </div>
+
         </div>
 
-        <a asp-action="Download"
-           asp-route-from="@ViewBag.From"
-           asp-route-to="@ViewBag.To"
-           class="btn btn-success mb-4">
-            <i class="bi bi-download"></i> Pobierz CSV
-        </a>
+        <div class="d-flex flex-wrap gap-2 mb-4">
+
+            <a asp-controller="Reports"
+               asp-action="Download"
+               asp-route-from="@from"
+               asp-route-to="@to"
+               class="btn btn-success">
+                <i class="bi bi-download"></i>
+                Pobierz CSV
+            </a>
+
+            <a asp-controller="Reports"
+               asp-action="Index"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Wyczyść filtry
+            </a>
+
+        </div>
+
+        @if (dateFrom.HasValue || dateTo.HasValue)
+        {
+            <div class="alert alert-light border mb-4">
+                <i class="bi bi-calendar-range text-success"></i>
+                Wyświetlany okres:
+                <strong>
+                    @(dateFrom?.ToString("dd.MM.yyyy") ?? "początek")
+                    –
+                    @(dateTo?.ToString("dd.MM.yyyy") ?? "dzisiaj i później")
+                </strong>
+            </div>
+        }
 
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover align-middle">
                 <thead class="table-dark">
                     <tr>
                         <th>Kort</th>
@@ -69,20 +139,42 @@
                         <th>Kwota</th>
                     </tr>
                 </thead>
+
                 <tbody>
-                    @foreach (var r in Model)
+                    @if (!Model.Any())
                     {
                         <tr>
-                            <td>@r.Court?.Name</td>
-                            <td>@r.User?.Email</td>
-                            <td>@r.Date.ToString("dd.MM.yyyy")</td>
-                            <td>@r.StartTime.ToString("HH:mm") - @r.EndTime.ToString("HH:mm")</td>
-                            <td>@r.Status</td>
-                            <td>@r.TotalPrice.ToString("N2") zł</td>
+                            <td colspan="6"
+                                class="text-center text-muted py-4">
+                                Brak rezerwacji w wybranym okresie.
+                            </td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td>@r.Court?.Name</td>
+                                <td>@r.User?.Email</td>
+                                <td>
+                                    @r.Date.ToString("dd.MM.yyyy")
+                                </td>
+                                <td class="text-nowrap">
+                                    @r.StartTime.ToString("HH:mm")
+                                    –
+                                    @r.EndTime.ToString("HH:mm")
+                                </td>
+                                <td>@r.Status</td>
+                                <td class="text-nowrap">
+                                    @r.TotalPrice.ToString("N2") zł
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
         </div>
+
     </div>
 </div>

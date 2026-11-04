@@ -17,6 +17,10 @@
 
             <div class="card-body p-4 bg-white">
                 <form asp-action="Register" method="post">
+                    <input type="hidden"
+                           name="returnUrl"
+                           value="@ViewBag.ReturnUrl" />
+
                     <div asp-validation-summary="ModelOnly"
                          class="text-danger small mb-3"></div>
 
@@ -94,9 +98,9 @@
                     </div>
 
                     <button type="submit"
-                            class="btn btn-emerald text-white w-100 py-2 rounded-pill fw-semibold shadow-sm">
+                            class="btn btn-emerald text-white w-100 py-2 rounded-pill fw-semibold shadow-sm mb-3">
                         <i class="bi bi-person-check me-1"></i>
-                        Zarejestruj się
+                        Utwórz konto
                     </button>
                 </form>
             </div>
@@ -104,6 +108,7 @@
             <div class="card-footer bg-light text-center py-3 border-0">
                 <span class="small text-muted">Masz już konto?</span>
                 <a asp-action="Login"
+                   asp-route-returnUrl="@ViewBag.ReturnUrl"
                    class="small fw-bold text-emerald text-decoration-none ms-1">
                     Zaloguj się
                 </a>

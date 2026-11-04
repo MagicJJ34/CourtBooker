@@ -28,24 +28,56 @@ public class ReservationsController : Controller
 
         if (!User.IsInRole("Admin"))
         {
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            int userId = int.Parse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
             query = query.Where(r => r.UserId == userId);
         }
 
-        return View(await query.OrderByDescending(r => r.Date)
-            .ThenBy(r => r.StartTime).ToListAsync());
+        return View(await query
+            .OrderByDescending(r => r.Date)
+            .ThenBy(r => r.StartTime)
+            .ToListAsync());
     }
 
+    [AllowAnonymous]
     public async Task<IActionResult> Calendar()
     {
         ViewBag.CourtId = new SelectList(
-            await _context.Courts.ToListAsync(), "Id", "Name");
+            await _context.Courts.ToListAsync(),
+            "Id",
+            "Name");
+
         return View();
     }
 
+    [AllowAnonymous]
+    [HttpGet]
     public async Task<IActionResult> Create(
-        string? date, string? startTime, string? endTime, int? courtId)
+        string? date,
+        string? startTime,
+        string? endTime,
+        int? courtId)
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            var returnUrl = Url.Action(
+                nameof(Create),
+                "Reservations",
+                new
+                {
+                    date,
+                    startTime,
+                    endTime,
+                    courtId
+                });
+
+            return RedirectToAction(
+                "Login",
+                "Account",
+                new { returnUrl });
+        }
+
         await LoadLists(courtId);
 
         var reservation = new Reservation();
@@ -59,13 +91,17 @@ public class ReservationsController : Controller
         if (TimeOnly.TryParse(endTime, out var e))
             reservation.EndTime = e;
 
+        if (courtId.HasValue)
+            reservation.CourtId = courtId.Value;
+
         return View(reservation);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
-        [Bind("CourtId,UserId,Date,StartTime,EndTime")] Reservation reservation)
+        [Bind("CourtId,UserId,Date,StartTime,EndTime")]
+        Reservation reservation)
     {
         ModelState.Remove("Court");
         ModelState.Remove("User");
@@ -76,48 +112,73 @@ public class ReservationsController : Controller
                 User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         }
 
-        if (!await _context.Users.AnyAsync(u => u.Id == reservation.UserId && u.IsActive))
-            ModelState.AddModelError("UserId", "Wybierz użytkownika.");
+        if (!await _context.Users.AnyAsync(
+            u => u.Id == reservation.UserId && u.IsActive))
+        {
+            ModelState.AddModelError(
+                "UserId",
+                "Wybierz użytkownika.");
+        }
 
-        var court = await _context.Courts.FindAsync(reservation.CourtId);
+        var court = await _context.Courts.FindAsync(
+            reservation.CourtId);
 
         if (court == null)
-            ModelState.AddModelError("CourtId", "Wybierz kort.");
+        {
+            ModelState.AddModelError(
+                "CourtId",
+                "Wybierz kort.");
+        }
 
         await ValidateReservation(reservation);
 
         if (ModelState.IsValid)
         {
             reservation.InternalStatus = "Pending";
-            reservation.TotalPrice = reservation.CalculatePrice(court!.PricePerHour);
+
+            reservation.TotalPrice =
+                reservation.CalculatePrice(court!.PricePerHour);
+
             _context.Reservations.Add(reservation);
 
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException ex) when (IsReservationConflict(ex))
+            catch (DbUpdateException ex)
+                when (IsReservationConflict(ex))
             {
-                _context.Entry(reservation).State = EntityState.Detached;
+                _context.Entry(reservation).State =
+                    EntityState.Detached;
+
                 ModelState.AddModelError(
                     "",
                     "Kort jest już zajęty w tym terminie. Wybierz inne godziny.");
 
-                await LoadLists(reservation.CourtId, reservation.UserId);
+                await LoadLists(
+                    reservation.CourtId,
+                    reservation.UserId);
+
                 return View(reservation);
             }
 
-            TempData["Success"] = "Rezerwacja została utworzona.";
+            TempData["Success"] =
+                "Rezerwacja została utworzona.";
+
             return RedirectToAction(nameof(Index));
         }
 
-        await LoadLists(reservation.CourtId, reservation.UserId);
+        await LoadLists(
+            reservation.CourtId,
+            reservation.UserId);
+
         return View(reservation);
     }
 
     public async Task<IActionResult> Edit(int id)
     {
-        var reservation = await _context.Reservations.FindAsync(id);
+        var reservation = await _context.Reservations
+            .FindAsync(id);
 
         if (reservation == null)
             return NotFound();
@@ -127,11 +188,16 @@ public class ReservationsController : Controller
 
         if (!CanManage(reservation))
         {
-            TempData["Error"] = "Nie można edytować tej rezerwacji.";
+            TempData["Error"] =
+                "Nie można edytować tej rezerwacji.";
+
             return RedirectToAction(nameof(Index));
         }
 
-        await LoadLists(reservation.CourtId, reservation.UserId);
+        await LoadLists(
+            reservation.CourtId,
+            reservation.UserId);
+
         return View(reservation);
     }
 
@@ -139,12 +205,14 @@ public class ReservationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(
         int id,
-        [Bind("Id,CourtId,UserId,Date,StartTime,EndTime")] Reservation model)
+        [Bind("Id,CourtId,UserId,Date,StartTime,EndTime")]
+        Reservation model)
     {
         if (id != model.Id)
             return NotFound();
 
-        var reservation = await _context.Reservations.FindAsync(id);
+        var reservation = await _context.Reservations
+            .FindAsync(id);
 
         if (reservation == null)
             return NotFound();
@@ -154,7 +222,9 @@ public class ReservationsController : Controller
 
         if (!CanManage(reservation))
         {
-            TempData["Error"] = "Nie można edytować tej rezerwacji.";
+            TempData["Error"] =
+                "Nie można edytować tej rezerwacji.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -164,13 +234,23 @@ public class ReservationsController : Controller
         if (!User.IsInRole("Admin"))
             model.UserId = reservation.UserId;
 
-        if (!await _context.Users.AnyAsync(u => u.Id == model.UserId && u.IsActive))
-            ModelState.AddModelError("UserId", "Wybierz użytkownika.");
+        if (!await _context.Users.AnyAsync(
+            u => u.Id == model.UserId && u.IsActive))
+        {
+            ModelState.AddModelError(
+                "UserId",
+                "Wybierz użytkownika.");
+        }
 
-        var court = await _context.Courts.FindAsync(model.CourtId);
+        var court = await _context.Courts.FindAsync(
+            model.CourtId);
 
         if (court == null)
-            ModelState.AddModelError("CourtId", "Wybierz kort.");
+        {
+            ModelState.AddModelError(
+                "CourtId",
+                "Wybierz kort.");
+        }
 
         await ValidateReservation(model, id);
 
@@ -181,28 +261,41 @@ public class ReservationsController : Controller
             reservation.Date = model.Date;
             reservation.StartTime = model.StartTime;
             reservation.EndTime = model.EndTime;
-            reservation.TotalPrice = model.CalculatePrice(court!.PricePerHour);
+
+            reservation.TotalPrice =
+                model.CalculatePrice(court!.PricePerHour);
 
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException ex) when (IsReservationConflict(ex))
+            catch (DbUpdateException ex)
+                when (IsReservationConflict(ex))
             {
-                await _context.Entry(reservation).ReloadAsync();
+                await _context.Entry(reservation)
+                    .ReloadAsync();
+
                 ModelState.AddModelError(
                     "",
                     "Kort jest już zajęty w tym terminie. Wybierz inne godziny.");
 
-                await LoadLists(model.CourtId, model.UserId);
+                await LoadLists(
+                    model.CourtId,
+                    model.UserId);
+
                 return View(model);
             }
 
-            TempData["Success"] = "Rezerwacja została zaktualizowana.";
+            TempData["Success"] =
+                "Rezerwacja została zaktualizowana.";
+
             return RedirectToAction(nameof(Index));
         }
 
-        await LoadLists(model.CourtId, model.UserId);
+        await LoadLists(
+            model.CourtId,
+            model.UserId);
+
         return View(model);
     }
 
@@ -210,7 +303,8 @@ public class ReservationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Cancel(int id)
     {
-        var reservation = await _context.Reservations.FindAsync(id);
+        var reservation = await _context.Reservations
+            .FindAsync(id);
 
         if (reservation == null)
             return NotFound();
@@ -220,29 +314,37 @@ public class ReservationsController : Controller
 
         if (!CanManage(reservation))
         {
-            TempData["Error"] = "Nie można anulować tej rezerwacji.";
+            TempData["Error"] =
+                "Nie można anulować tej rezerwacji.";
+
             return RedirectToAction(nameof(Index));
         }
 
         reservation.InternalStatus = "Cancelled";
+
         await _context.SaveChangesAsync();
 
-        TempData["Success"] = "Rezerwacja została anulowana.";
+        TempData["Success"] =
+            "Rezerwacja została anulowana.";
+
         return RedirectToAction(nameof(Index));
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetEvents(int? courtId)
     {
         var query = _context.Reservations
             .Include(r => r.Court)
             .Include(r => r.User)
-            .Where(r => r.InternalStatus != "Cancelled" &&
-                        r.InternalStatus != "Anulowano");
+            .Where(r =>
+                r.InternalStatus != "Cancelled" &&
+                r.InternalStatus != "Anulowano");
 
         if (courtId.HasValue && courtId.Value > 0)
         {
-            query = query.Where(r => r.CourtId == courtId.Value);
+            query = query.Where(
+                r => r.CourtId == courtId.Value);
         }
 
         var reservations = await query
@@ -251,51 +353,70 @@ public class ReservationsController : Controller
 
         bool isAdmin = User.IsInRole("Admin");
 
-        int currentUserId = int.Parse(
-            User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        int? currentUserId = null;
+
+        if (User.Identity?.IsAuthenticated == true &&
+            int.TryParse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                out int parsedUserId))
+        {
+            currentUserId = parsedUserId;
+        }
 
         return Json(reservations.Select(r =>
         {
-            bool isOwner = r.UserId == currentUserId;
+            bool isOwner =
+                currentUserId.HasValue &&
+                r.UserId == currentUserId.Value;
 
             string title;
 
             if (isAdmin)
             {
-                title = $"{r.Court?.Name ?? "Kort"} - {r.User?.Name ?? "Użytkownik"}";
+                title =
+                    $"{r.Court?.Name ?? "Kort"} - " +
+                    $"{r.User?.Name ?? "Użytkownik"}";
             }
             else if (isOwner)
             {
-                title = $"{r.Court?.Name ?? "Kort"} - Twoja rezerwacja";
+                title =
+                    $"{r.Court?.Name ?? "Kort"} - Twoja rezerwacja";
             }
             else
             {
-                title = $"{r.Court?.Name ?? "Kort"} - Zajęty";
+                title =
+                    $"{r.Court?.Name ?? "Kort"} - Zajęty";
             }
 
             return new
             {
                 id = r.Id,
                 title,
-                start = $"{r.Date:yyyy-MM-dd}T{r.StartTime:HH\\:mm\\:ss}",
-                end = $"{r.Date:yyyy-MM-dd}T{r.EndTime:HH\\:mm\\:ss}",
+                start =
+                    $"{r.Date:yyyy-MM-dd}T{r.StartTime:HH\\:mm\\:ss}",
+                end =
+                    $"{r.Date:yyyy-MM-dd}T{r.EndTime:HH\\:mm\\:ss}",
                 color = isOwner ? "#198754" : "#dc3545",
                 courtId = r.CourtId
             };
         }));
     }
 
-    private static bool IsReservationConflict(DbUpdateException exception)
+    private static bool IsReservationConflict(
+        DbUpdateException exception)
     {
-        return exception.InnerException is PostgresException postgresException &&
-               postgresException.SqlState == PostgresErrorCodes.ExclusionViolation;
+        return exception.InnerException
+                   is PostgresException postgresException &&
+               postgresException.SqlState ==
+                   PostgresErrorCodes.ExclusionViolation;
     }
 
     private bool CanAccess(Reservation reservation)
     {
         return User.IsInRole("Admin") ||
-            reservation.UserId.ToString() ==
-            User.FindFirstValue(ClaimTypes.NameIdentifier);
+               reservation.UserId.ToString() ==
+               User.FindFirstValue(
+                   ClaimTypes.NameIdentifier);
     }
 
     private bool CanManage(Reservation reservation)
@@ -304,7 +425,8 @@ public class ReservationsController : Controller
             return false;
 
         return User.IsInRole("Admin") ||
-            reservation.Date.ToDateTime(reservation.StartTime) > DateTime.Now;
+               reservation.Date.ToDateTime(
+                   reservation.StartTime) > DateTime.Now;
     }
 
     private async Task ValidateReservation(
@@ -313,32 +435,48 @@ public class ReservationsController : Controller
     {
         if (reservation.Date == default ||
             reservation.StartTime == default ||
-            reservation.Date.ToDateTime(reservation.StartTime) <= DateTime.Now)
+            reservation.Date.ToDateTime(
+                reservation.StartTime) <= DateTime.Now)
         {
-            ModelState.AddModelError("Date", "Wybierz przyszły termin.");
+            ModelState.AddModelError(
+                "Date",
+                "Wybierz przyszły termin.");
         }
 
         if (reservation.StartTime >= reservation.EndTime)
-            ModelState.AddModelError("EndTime", "Nieprawidłowe godziny.");
+        {
+            ModelState.AddModelError(
+                "EndTime",
+                "Nieprawidłowe godziny.");
+        }
 
-        bool occupied = await _context.Reservations.AnyAsync(r =>
-            r.Id != excludeId &&
-            r.CourtId == reservation.CourtId &&
-            r.Date == reservation.Date &&
-            r.InternalStatus != "Cancelled" &&
-            r.InternalStatus != "Anulowano" &&
-            reservation.StartTime < r.EndTime &&
-            reservation.EndTime > r.StartTime);
+        bool occupied = await _context.Reservations
+            .AnyAsync(r =>
+                r.Id != excludeId &&
+                r.CourtId == reservation.CourtId &&
+                r.Date == reservation.Date &&
+                r.InternalStatus != "Cancelled" &&
+                r.InternalStatus != "Anulowano" &&
+                reservation.StartTime < r.EndTime &&
+                reservation.EndTime > r.StartTime);
 
         if (occupied)
-            ModelState.AddModelError("", "Kort jest już zajęty w tym terminie.");
+        {
+            ModelState.AddModelError(
+                "",
+                "Kort jest już zajęty w tym terminie.");
+        }
     }
 
-    private async Task LoadLists(int? courtId = null, int? userId = null)
+    private async Task LoadLists(
+        int? courtId = null,
+        int? userId = null)
     {
         ViewBag.CourtId = new SelectList(
             await _context.Courts.ToListAsync(),
-            "Id", "Name", courtId);
+            "Id",
+            "Name",
+            courtId);
 
         if (User.IsInRole("Admin"))
         {
@@ -347,7 +485,9 @@ public class ReservationsController : Controller
                     .Where(u => u.IsActive)
                     .OrderBy(u => u.Email)
                     .ToListAsync(),
-                "Id", "Email", userId);
+                "Id",
+                "Email",
+                userId);
         }
     }
 }

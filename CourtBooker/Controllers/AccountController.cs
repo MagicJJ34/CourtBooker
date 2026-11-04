@@ -20,18 +20,24 @@ public class AccountController : Controller
         _context = context;
     }
 
-    public IActionResult Login()
+    public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Index", "Home");
+            return RedirectToLocal(returnUrl);
+
+        ViewBag.ReturnUrl = returnUrl;
 
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(LoginViewModel model)
+    public async Task<IActionResult> Login(
+        LoginViewModel model,
+        string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -58,21 +64,27 @@ public class AccountController : Controller
 
         await SignIn(user);
 
-        return RedirectToAction("Index", "Home");
+        return RedirectToLocal(returnUrl);
     }
 
-    public IActionResult Register()
+    public IActionResult Register(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Index", "Home");
+            return RedirectToLocal(returnUrl);
+
+        ViewBag.ReturnUrl = returnUrl;
 
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(RegisterViewModel model)
+    public async Task<IActionResult> Register(
+        RegisterViewModel model,
+        string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -105,7 +117,9 @@ public class AccountController : Controller
         TempData["RegistrationSuccess"] =
             "Konto zostało utworzone pomyślnie. Możesz się teraz zalogować.";
 
-        return RedirectToAction(nameof(Login));
+        return RedirectToAction(
+            nameof(Login),
+            new { returnUrl });
     }
 
     [Authorize]
@@ -239,6 +253,17 @@ public class AccountController : Controller
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
+    }
+
+    private IActionResult RedirectToLocal(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) &&
+            Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpPost]

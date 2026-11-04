@@ -4,11 +4,13 @@
     --emerald-accent: #198754;
     --emerald-light: #e8f5e9;
     --dark-bg: #1a252c;
+    --border-soft: #e3e9e6;
 }
 
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     color: #2c3e50;
+    overflow-x: hidden;
 }
 
 .bg-dark-emerald {
@@ -19,19 +21,35 @@ body {
     color: var(--emerald-accent) !important;
 }
 
+.bg-emerald-light {
+    background-color: var(--emerald-light) !important;
+}
+
 .btn-emerald {
     background-color: var(--emerald-accent);
     border-color: var(--emerald-accent);
+    color: #fff;
 }
 
-    .btn-emerald:hover {
+    .btn-emerald:hover,
+    .btn-emerald:focus-visible {
         background-color: var(--emerald-hover);
         border-color: var(--emerald-hover);
-        color: white;
+        color: #fff;
     }
 
 .hover-white:hover {
-    color: #ffffff !important;
+    color: #fff !important;
+}
+
+a.text-emerald:hover,
+a.text-emerald:focus-visible {
+    color: var(--emerald-hover) !important;
+    text-decoration: underline !important;
+}
+
+a:not(.btn):not(.nav-link):not(.navbar-brand):not(.dropdown-item) {
+    text-underline-offset: 3px;
 }
 
 .card {
@@ -42,6 +60,11 @@ body {
 .card-hover:hover {
     transform: translateY(-3px);
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.card-header {
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
 }
 
 .table-custom {
@@ -56,8 +79,160 @@ body {
         color: white;
     }
 
+.table {
+    vertical-align: middle;
+}
+
+    .table th,
+    .table td {
+        padding: 0.85rem 0.9rem;
+    }
+
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+}
+
 .badge-status {
     padding: 0.5em 0.8em;
     font-weight: 500;
     border-radius: 6px;
+}
+
+.form-control,
+.form-select {
+    border-radius: 9px;
+    border-color: #d6dfda;
+    min-height: 42px;
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--emerald-accent);
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+    }
+
+.form-check-input:checked {
+    background-color: var(--emerald-accent);
+    border-color: var(--emerald-accent);
+}
+
+.form-check-input:focus {
+    border-color: var(--emerald-accent);
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+}
+
+.btn {
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .btn:focus-visible,
+    a:focus-visible {
+        outline: 2px solid var(--emerald-accent);
+        outline-offset: 3px;
+    }
+
+.navbar .nav-link {
+    border-radius: 8px;
+    padding: 0.55rem 0.8rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+    .navbar .nav-link:hover,
+    .navbar .nav-link:focus-visible {
+        color: #fff !important;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+    .navbar-toggler:focus {
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.35);
+    }
+
+.alert {
+    border-radius: 10px;
+}
+
+.pagination .page-link {
+    color: var(--emerald-primary);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--emerald-accent);
+    border-color: var(--emerald-accent);
+    color: white;
+}
+
+.pagination .page-link:focus {
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+}
+
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        padding-top: 1rem;
+    }
+
+    .navbar-nav {
+        margin-left: 0 !important;
+    }
+
+    .navbar .nav-link {
+        padding: 0.75rem 0.85rem;
+    }
+
+    .navbar .navbar-nav.align-items-center {
+        align-items: stretch !important;
+        padding-top: 0.75rem;
+        margin-top: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+        .navbar .navbar-nav.align-items-center .btn {
+            width: 100%;
+        }
+}
+
+@media (max-width: 767.98px) {
+    main.container {
+        padding-top: 1.25rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.7rem 0.65rem;
+        font-size: 0.875rem;
+    }
+
+    .table-responsive {
+        border-radius: 10px;
+    }
+
+    .footer {
+        font-size: 0.8rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
 }

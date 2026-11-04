@@ -23,7 +23,20 @@
                     </div>
                 }
 
+                @if (!string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string))
+                {
+                    <div class="alert alert-info small">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        Zaloguj się, aby dokończyć rezerwację.
+                        Po zalogowaniu wrócisz do wybranego terminu.
+                    </div>
+                }
+
                 <form asp-action="Login" method="post">
+                    <input type="hidden"
+                           name="returnUrl"
+                           value="@ViewBag.ReturnUrl" />
+
                     <div asp-validation-summary="ModelOnly"
                          class="alert alert-danger py-2 small mb-3"></div>
 
@@ -79,6 +92,7 @@
             <div class="card-footer bg-light text-center py-3 border-0">
                 <span class="small text-muted">Nie masz jeszcze konta?</span>
                 <a asp-action="Register"
+                   asp-route-returnUrl="@ViewBag.ReturnUrl"
                    class="small fw-bold text-emerald text-decoration-none ms-1">
                     Zarejestruj się
                 </a>
