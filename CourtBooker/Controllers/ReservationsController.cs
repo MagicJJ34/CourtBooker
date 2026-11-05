@@ -44,7 +44,9 @@ public class ReservationsController : Controller
     public async Task<IActionResult> Calendar()
     {
         ViewBag.CourtId = new SelectList(
-            await _context.Courts.ToListAsync(),
+            await _context.Courts
+                .OrderBy(c => c.Name)
+                .ToListAsync(),
             "Id",
             "Name");
 
